@@ -33,7 +33,7 @@ class _GetchWindows:
 
     def __call__(self):
         import msvcrt
-        return msvcrt.getwch()  # 拿到的是unicode
+        return msvcrt.getwch()
 
 
 getch = _Getch()
