@@ -12,6 +12,9 @@ class GameOverException(Exception):
 
 
 class Board1024:
+    """
+    就是普通的1024游戏，基于命令行的清屏来实现动画效果
+    """
     def __init__(self):
         self.score = 0
         self.piece_list = self.init_list()
@@ -19,6 +22,10 @@ class Board1024:
         self.write, self.flush = sys.stdout.write, sys.stdout.flush
 
     def init_list(self):  # 初始化所有棋子
+        """
+        生成长度为16的一维空列表，然后随机塞几个数字进去
+        :return: 初始列表
+        """
         _init_list = []
         for _ in range(16):
             _init_list.append('')
@@ -27,17 +34,26 @@ class Board1024:
         return _init_list
 
     @staticmethod
-    def product_2_or_4():  # 随机返回4或2,33%生成4,66%生成2
+    def product_2_or_4():
+        """
+        根据随机数判断，随机返回4或2,33%生成4,66%生成2
+        :return: 随机返回2或4
+        """
         if randint(0, 2) > 1:
             return 4
         else:
             return 2
 
-    def product_random_piece(self, piece_list=None):  # 在空的地方填数字
+    def product_random_piece(self, piece_list=None):
+        """
+        在空列表空的地方，随机插入一个随机数
+        :param piece_list: 目标列表
+        :return: 已插入随机数的列表
+        """
         if piece_list is None:
             piece_list = self.piece_list
         _empty_list = []
-        for i, k in enumerate(piece_list):
+        for i, k in enumerate(piece_list):  # 将空的index放到列表中，然后随机得到一个index，最后替换这个index的值
             if not k:
                 _empty_list.append(i)
         _position = _empty_list[0 if len(_empty_list) == 1 else randint(0, len(_empty_list) - 1)]
@@ -45,6 +61,7 @@ class Board1024:
         return piece_list
 
     def handle_single_row(self, single_list):
+        """就是对单行的操作，合并并且移动，比较难形容，可以看单元测试"""
         pp = list(single_list)
         llen = len(pp)
         while True:
@@ -65,8 +82,10 @@ class Board1024:
         return pp
 
     def operation(self, piece_list=None, opt='left'):
+        """根据操作符来对整个棋盘的棋子进行操作，然后无论是哪个方向，都可以经过变换然后传给handle_single_row来操作"""
         if piece_list is None:
             piece_list = self.piece_list
+
         if opt == 'left':
             for i in range(4):
                 piece_list[i*4: i*4 + 4] = self.handle_single_row(piece_list[i*4: i*4 + 4])
@@ -86,6 +105,7 @@ class Board1024:
         return piece_list
 
     def create_board(self, piece_list=None):
+        """创造用于表达棋盘的字符串块，然后将存储棋子的一维数组填充进去"""
         if piece_list is None:
             piece_list = self.piece_list
         _board = ''
@@ -96,6 +116,8 @@ class Board1024:
         return _board.format(*map(str, piece_list))
 
     def still_alive(self, piece_list=None):
+        """判断游戏是否结束：1，是否胜利，也就是是否有1024出现；2，是否失败，也就是没有空位，且不能再移动，而能否
+        再移动的判断就是，相邻的元素是否相同"""
         if piece_list is None:
             piece_list = self.piece_list
         if 1024 in piece_list:
@@ -121,6 +143,7 @@ class Board1024:
         #     if piece_list.count(item) > 1:
 
     def draw(self, ctn, wrong_txt=''):
+        """将字符串块输出到命令行中"""
         os.system('cls')
         title_txt = '{:^21}\n'.format('Game of 1024')
         score_txt = 'Score: %d point!\n' % self.score
@@ -130,6 +153,7 @@ class Board1024:
         self.flush()
 
     def run(self):
+        """游戏的主循环，接收输入，然后刷新，再输出"""
         os.system('cls')
         wrong_txt = ''
         while True:
@@ -155,10 +179,5 @@ class Board1024:
 
 
 if __name__ == '__main__':
-    # ll = ([2, '', '', 2], ['', 4, '', 2], ['', '', 2, 2], [2, 2, 4, 4], [2, 2, '', ''], [2, 4, 2, 4], [2, 2, '', 4])
-    # for l in ll:
-    #     print(l, handle_single_row(l))
-    # g = getch()
-    # print(g)
     board = Board1024()
     board.run()
