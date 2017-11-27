@@ -10,6 +10,7 @@ def do_it():
             data = pickle.load(rf)
         sheet_one(data)
         print('done {}'.format(filename))
+
         
 def do_that():
     filenames = os.listdir('./pickle_folder/water')
@@ -18,8 +19,9 @@ def do_that():
             data = pickle.load(rf)
         sheet_two(data)
         print('done {}'.format(filename))
+        
 
 if __name__ == '__main__':
-    do_that()
+    do_it()
 
         

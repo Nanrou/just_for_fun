@@ -15,6 +15,7 @@ def get_pump_house():
             
         _dict = {}
         _dict['title'] = ''.join(['{:0>3}'.format(row[0]), row[2]])
+        print('start ', _dict['title'])
         
         if row[8] is None:
             top = row[6] if row[6] is not None else 12
@@ -46,13 +47,22 @@ def get_pump_house():
         
         _dict['加压总户数'] = row[66] if row[66] is not None else ''
         
-        if all_data[index + 1][0] is not None:
+        _dict['PLC:型号'] = row[56] if row[56] is not None else ''
+        _dict['PLC:品牌'] = row[57] if row[57] is not None else ''
         
-            _dict['分区'] = 2
+        _dict['VFD:型号'] = row[53] if row[53] is not None else ''
+        _dict['VFD:品牌'] = row[54] if row[54] is not None else ''
+        
+        if all_data[index + 1][0] is not None:
+         
             _dict['直供:临界'] = row[4] if row[4] is not None else 0
             _dict['一区:临界'] = row[6] if row[6] is not None else ''
             _dict['二区:临界'] = row[8] if row[8] is not None else ''
-            # _dict['三区:临界'] = row[4] if row[4] is not None else 0
+            
+            if row[8]:
+                _dict['分区'] = 2
+            else:
+                _dict['分区'] = 1
             
             _dict['一区:设定压力'] = row[19] if row[19] is not None else ''
             
@@ -76,6 +86,11 @@ def get_pump_house():
             _dict['一区:控制:数量'] = 1 if row[57] is not None else ''
             _dict['一区:控制:型号'] = row[56] if row[56] is not None else ''
             _dict['一区:控制:品牌'] = row[57] if row[57] is not None else ''
+            
+            _dict['一区:控制:PLC'] = row[56] if row[56] is not None else ''
+            _dict['一区:控制:VFD'] = row[53] if row[53] is not None else ''
+            _dict['一区:控制:U'] = 380 if row[56] is not None else ''
+            _dict['一区:控制:N'] = row[27] if row[56] is not None else ''
 
             _dict['一区:主泵:H'] = row[11] if row[11] is not None else ''
             _dict['一区:主泵:Q'] = row[12] if row[12] is not None else ''
@@ -101,58 +116,58 @@ def get_pump_house():
             _dict['一区:供水户数'] = _dict['加压总户数'] // _dict['分区']  if _dict['加压总户数'] else ''
 
             # ------------------------------------------------------------------------------------------
-            
-            _dict['二区:设定压力'] = row[19  + 22] if row[19  + 22] is not None else ''
-            
-            _dict['二区:主泵:数量'] = _dict['二区:电机:数量'] = row[18 + 22] if row[18 + 22] is not None else ''
-            _dict['二区:主泵:型号'] = row[9 + 22] if row[9 + 22] is not None else ''
-            _dict['二区:主泵:品牌'] = row[10 + 22] if row[10 + 22] is not None else ''
-            _dict['二区:电机:型号'] = row[13 + 22] if row[13 + 22] is not None else ''
-            _dict['二区:电机:品牌'] = row[14 + 22] if row[14 + 22] is not None else ''
-            
-            _dict['二区:辅泵:数量'] = _dict['二区:电机_f:数量'] = row[29 + 22] if row[29 + 22] is not None else ''
-            _dict['二区:辅泵:型号'] = row[20 + 22] if row[20 + 22] is not None else ''
-            _dict['二区:辅泵:品牌'] = row[21 + 22] if row[21 + 22] is not None else ''
-            _dict['二区:电机_f:型号'] = row[24 + 22] if row[24 + 22] is not None else ''
-            _dict['二区:电机_f:品牌'] = row[25 + 22] if row[25 + 22] is not None else ''
+            if _dict['分区'] == 2:
+                
+                _dict['二区:设定压力'] = row[19  + 22] if row[19  + 22] is not None else ''
+                
+                _dict['二区:主泵:数量'] = _dict['二区:电机:数量'] = row[18 + 22] if row[18 + 22] is not None else ''
+                _dict['二区:主泵:型号'] = row[9 + 22] if row[9 + 22] is not None else ''
+                _dict['二区:主泵:品牌'] = row[10 + 22] if row[10 + 22] is not None else ''
+                _dict['二区:电机:型号'] = row[13 + 22] if row[13 + 22] is not None else ''
+                _dict['二区:电机:品牌'] = row[14 + 22] if row[14 + 22] is not None else ''
+                
+                _dict['二区:辅泵:数量'] = _dict['二区:电机_f:数量'] = row[29 + 22] if row[29 + 22] is not None else ''
+                _dict['二区:辅泵:型号'] = row[20 + 22] if row[20 + 22] is not None else ''
+                _dict['二区:辅泵:品牌'] = row[21 + 22] if row[21 + 22] is not None else ''
+                _dict['二区:电机_f:型号'] = row[24 + 22] if row[24 + 22] is not None else ''
+                _dict['二区:电机_f:品牌'] = row[25 + 22] if row[25 + 22] is not None else ''
 
 
-            _dict['二区:主泵:H'] = row[11 + 22] if row[11 + 22] is not None else ''
-            _dict['二区:主泵:Q'] = row[12 + 22] if row[12 + 22] is not None else ''
-            
-            _dict['二区:电机:U'] = 380 if row[16 + 22] is not None else ''
-            _dict['二区:电机:N'] = row[16 + 22] if row[16 + 22] is not None else ''
-            _dict['二区:电机:n'] = row[17 + 22] if row[17 + 22] is not None else ''
-            _dict['二区:电机:密封'] = row[15 + 22] if row[15 + 22] is not None else ''
-            
-            _dict['二区:辅泵:H'] = row[22 + 22] if row[22 + 22] is not None else ''
-            _dict['二区:辅泵:Q'] = row[23 + 22] if row[23 + 22] is not None else ''
-            
-            _dict['二区:电机_f:U'] = 380 if row[27 + 22] is not None else ''
-            _dict['二区:电机_f:N'] = row[27 + 22] if row[27 + 22] is not None else ''
-            _dict['二区:电机_f:n'] = row[28 + 22] if row[28 + 22] is not None else ''
-            _dict['二区:电机_f:密封'] = row[26 + 22] if row[26 + 22] is not None else ''
-                    
-            _dict['二区:气压罐:数量'] = 1 if row[58] is not None else ''
-            _dict['二区:气压罐:型号'] = row[58] if row[58] is not None else ''
-            _dict['二区:气压罐:品牌'] = row[59] if row[59] is not None else ''
-            _dict['二区:气压罐:V'] = row[58] if row[58] is not None else ''
-            
-            _dict['二区:控制:数量'] = 1 if row[57 ] is not None else ''
-            _dict['二区:控制:型号'] = row[56] if row[56] is not None else ''
-            _dict['二区:控制:品牌'] = row[57] if row[57] is not None else ''
-            
+                _dict['二区:主泵:H'] = row[11 + 22] if row[11 + 22] is not None else ''
+                _dict['二区:主泵:Q'] = row[12 + 22] if row[12 + 22] is not None else ''
+                
+                _dict['二区:电机:U'] = 380 if row[16 + 22] is not None else ''
+                _dict['二区:电机:N'] = row[16 + 22] if row[16 + 22] is not None else ''
+                _dict['二区:电机:n'] = row[17 + 22] if row[17 + 22] is not None else ''
+                _dict['二区:电机:密封'] = row[15 + 22] if row[15 + 22] is not None else ''
+                
+                _dict['二区:辅泵:H'] = row[22 + 22] if row[22 + 22] is not None else ''
+                _dict['二区:辅泵:Q'] = row[23 + 22] if row[23 + 22] is not None else ''
+                
+                _dict['二区:电机_f:U'] = 380 if row[27 + 22] is not None else ''
+                _dict['二区:电机_f:N'] = row[27 + 22] if row[27 + 22] is not None else ''
+                _dict['二区:电机_f:n'] = row[28 + 22] if row[28 + 22] is not None else ''
+                _dict['二区:电机_f:密封'] = row[26 + 22] if row[26 + 22] is not None else ''
+                        
+                _dict['二区:气压罐:数量'] = 1 if row[58] is not None else ''
+                _dict['二区:气压罐:型号'] = row[58] if row[58] is not None else ''
+                _dict['二区:气压罐:品牌'] = row[59] if row[59] is not None else ''
+                _dict['二区:气压罐:V'] = row[58] if row[58] is not None else ''
+                
+                _dict['二区:控制:数量'] = 1 if row[57 ] is not None else ''
+                _dict['二区:控制:型号'] = row[56] if row[56] is not None else ''
+                _dict['二区:控制:品牌'] = row[57] if row[57] is not None else ''
+                
 
-            _dict['二区:总出水管径(mm)'] = _dict['一区:总出水管径(mm)']
-            _dict['二区:管材'] = _dict['一区:管材']
-            _dict['二区:供水方式'] = _dict['一区:供水方式']
-            _dict['二区:泵组流量上限Q'] = _dict['二区:主泵:Q'] * _dict['二区:主泵:数量'] if _dict['二区:主泵:Q'] and _dict['二区:主泵:数量'] else ''
-            _dict['二区:泵组扬程上限H'] = _dict['二区:主泵:H'] if _dict['二区:主泵:H'] else ''
-            _dict['二区:供水户数'] = _dict['加压总户数'] // _dict['分区']  if _dict['加压总户数'] else ''
-        
+                _dict['二区:总出水管径(mm)'] = _dict['一区:总出水管径(mm)']
+                _dict['二区:管材'] = _dict['一区:管材']
+                _dict['二区:供水方式'] = _dict['一区:供水方式']
+                _dict['二区:泵组流量上限Q'] = _dict['二区:主泵:Q'] * _dict['二区:主泵:数量'] if _dict['二区:主泵:Q'] and _dict['二区:主泵:数量'] else ''
+                _dict['二区:泵组扬程上限H'] = _dict['二区:主泵:H'] if _dict['二区:主泵:H'] else ''
+                _dict['二区:供水户数'] = _dict['加压总户数'] // _dict['分区']  if _dict['加压总户数'] else ''
+            
         else:
             _next_row = all_data[index + 1]
-            print(_next_row)
             _dict['分区'] = 3
             _dict['直供:临界'] = row[4] if row[4] is not None else 0
             _dict['一区:临界'] = _next_row[6] if _next_row[6] is not None else ''
@@ -369,6 +384,6 @@ def get_water_tank():
         
         
 if __name__ == '__main__':
-    # get_pump_house()
-    get_water_tank()
+    get_pump_house()
+    # get_water_tank()
     
