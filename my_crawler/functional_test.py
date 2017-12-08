@@ -1,14 +1,15 @@
 import asyncio
 from contextlib import contextmanager
 import io
-import socket
 import logging
 import unittest
+from random import random, randint
 
-from aiohttp import ClientError, web
+from aiohttp import web
+from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
 import pytest
 
-from .crawl import Crawler
+from .crawl import Crawler, simple_request
 
 
 @contextmanager
@@ -33,100 +34,75 @@ def capture_logging():
         logger.setLevel(level)
 
 
-class TestCrawler(unittest.TestCase):
+class TestCrawler(AioHTTPTestCase):
 
-    def setUp(self):
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(None)
-
-        def close_loop():
-            self.loop.stop()
-            self.loop.run_forever()
-            self.loop.close()
-
-        self.addCleanup(close_loop)
-
-        self.port = self._find_unused_port()
-        self.app_url = 'http://127.0.0.1:{}'.format(self.port)
-        self.app = self.loop.run_until_complete(self._create_server())
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.crawler = None
 
-    @staticmethod
-    def _find_unused_port():
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind(('127.0.0.1', 0))
-        port = s.getsockname()[1]
-        s.close()
-        return port
+    def get_app(self):
 
-    async def _create_server(self):
-        app = web.Application(loop=self.loop)
-        handler_factory = app.make_handler(debug=True)
-        srv = await self.loop.create_server(
-            handler_factory, '127.0.0.1', self.port
-        )
+        async def hello(request):
+            return web.Response(text='hello world')
 
-        self.addCleanup(srv.close())
-        self.addCleanup(lambda: self.loop.run_until_complete(
-            srv.wait_closed()
-        ))
-        self.addCleanup(lambda: self.loop.run_until_complete(
-            app.shutdown()
-        ))
-        self.addCleanup(lambda: self.loop.run_until_complete(
-            handler_factory.shutdown(60.00)
-        ))
-        self.addCleanup(lambda: self.loop.run_until_complete(
-            app.cleanup()
-        ))
+        async def random_num(request):
+            await asyncio.sleep(random())
+            return web.Response(text=request.match_info['num'])
+
+        async def bad_request(request):
+            raise web.HTTPBadRequest()
+
+        async def timeout(request):
+            await asyncio.sleep(10)
+            return web.Response(text='timeout!!!')
+
+        app = web.Application()
+        app.router.add_route('GET', '/', hello)
+        resource = app.router.add_resource('/num/{num}')
+        resource.add_route('GET', random_num)
+
+        app.router.add_route('GET', '/bad', bad_request)
+        app.router.add_route('GET', '/timeout', timeout)
+
         return app
 
-    def add_handler(self, url, handler):
-        self.app.router.add_route('GET', url, handler)
-
-    def add_page(self, url='/', links=None, body=None, content_type=None):
-        if not body:
-            text = ''.join('<a href="{}"></a>'.format(link) for link in links or [])
-            body = text.encode('utf-8')
-
-        if content_type is None:
-            content_type = 'text/html; charset=utf-8'
-
-        async def handler(req):
-            await req.read()
-            return web.Response(body=body, headers=[('CONTENT-TYPE', content_type)])
-
-        self.add_handler(url, handler)
-        return self.app_url + url
-
-    def add_redirect(self, url, link):
-        async def handler(_):
-            raise web.HTTPFound(link)
-
-        self.add_handler(url, handler)
-        return self.app_url + url
-
-    def assertDoneCount(self, n):
-        pass
-
-    def assertStat(self, stat_index=0, **kwargs):
-        pass
+    def url_path(self, path):
+        return self.server._root.human_repr() + str(path)
 
     def crawl(self, urls=None, *args, **kwargs):
         if self.crawler:
             self.crawler.close()
         if urls is None:
-            urls = [self.app_url]
+            urls = [self.server._root]
         self.crawler = Crawler(urls, *args, loop=self.loop, **kwargs)
-        self.addCleanup(self.crawler.close())
         self.loop.run_until_complete(self.crawler.crawl())
 
-    def test_link(self):
-        self.add_page('/', ['/foo'])
+    @unittest_run_loop
+    async def test_link(self):
+        req = await self.client.request('GET', '/')
+        assert req.status == 200
+        text = await req.text()
+        assert 'hello' in text
+
+    def test_one_link(self):
+        ss = self.loop.run_until_complete(simple_request(self.server._root))
+        self.assertEqual(200, ss)
         self.crawl()
         self.assertEqual(1, len(self.crawler.done))
+
+    def test_100_links(self):
+        _num = randint(50, 100)
+        self.crawl([self.url_path('num/' + str(num)) for num in range(_num)])
+        self.assertEqual(_num, len(self.crawler.done))
+
+    def test_bad_request(self):
+        self.crawl(self.url_path('bad'))
+        self.assertEqual(1, len(self.crawler.bad_url))
+
+    def test_timeout(self):
+        self.crawl(self.url_path('timeout'))
+        self.assertEqual(0, len(self.crawler.done))
 
 
 if __name__ == '__main__':
     unittest.main()
-
