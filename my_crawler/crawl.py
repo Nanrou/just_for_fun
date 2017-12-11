@@ -17,12 +17,12 @@ async def simple_request(url):
 
 
 class Crawler:
-    def __init__(self, urls, loop=None, max_tasks=5, debug=True):
+    def __init__(self, urls, loop=None, max_tasks=5, debug=True, request_head=None):
         if not isinstance(urls, MutableSequence):
             urls = [urls]
         self._urls = urls
         self._loop = loop or asyncio.get_event_loop()
-        self._session = aiohttp.ClientSession(loop=self._loop)
+        self._session = aiohttp.ClientSession(loop=self._loop, **request_head)
         self._queue = Queue(loop=self._loop)
         self._max_tasks = max_tasks
         self.add_urls()
@@ -44,9 +44,13 @@ class Crawler:
 
         if response.status == 200:
             logger.info(body)
+            self.scrap_detail(body)
         else:
             logger.info('status {}'.format(response.status))
             self.bad_url.add(response.url)
+
+    def scrap_detail(self, body):  # 由具体需求决定
+        pass
 
     async def fetch(self, url):
         try:
