@@ -605,15 +605,19 @@ def sheet_one(data, filename=None,sheet1=True, sheet2=True, sheet3=True):
                 equipment_sheet.write_string(2 + i, 6, DATA.get('{}:品牌'.format(item[0])), _format)    
                 equipment_sheet.write_string(2 + i, 7, '', _format) 
                 
-def sheet_two(data):
+def sheet_two(data, filename=None):
     _data = MyDict(data)
-    with xlsxwriter.Workbook('./wt/{}.xlsx'.format(data.get('No', 'test'))) as wb:
+    
+    if filename is None:
+        filename = './wt/{}.xlsx'.format(data.get('title', 'test'))
+        
+    with xlsxwriter.Workbook(filename) as wb:
         worksheet = wb.add_worksheet('水池')
 
         worksheet.set_column(0, 32, 4)
 
         worksheet.set_row(0, 50)
-        for r in range(1, 14):
+        for r in range(1, 15):
             worksheet.set_row(r, 27)
 
         worksheet.merge_range('A1:G1', '')
@@ -827,7 +831,63 @@ def sheet_two(data):
             worksheet.merge_range('{}13:{}13'.format(*c[1]), _data.get(s), wb.add_format(tmp2))
         
         
+        # 画简图
+        
+        worksheet.set_row(15, 50)
+        for r in range(16, 42):
+            worksheet.set_row(r, 27)
+            
+        worksheet.merge_range('A16:G16', '')
+        worksheet.merge_range('H16:X16', '珠海市二次供水水池(箱)大样图', title_format)
+        
+        tmp = wb.add_format({
+            'align': 'right',
+            'valign': 'vcenter',
+            'font_size': 12,
+            'font_name': '仿宋',
+        })
+        worksheet.merge_range('Y16:Z16', '编号:', tmp)
+
+        tmp.set_align('left')
+        worksheet.merge_range('AA16:AE16', _data.get('No'), tmp)
+        
+
+        for col in range(31):
+            worksheet.write_string(17, col, '', wb.add_format({'top': 2}))
+            worksheet.write_string(40, col, '', wb.add_format({'bottom': 2}))
+        
+        for row in range(17, 40 + 1):
+            worksheet.write_string(row, 0, '', wb.add_format({'left': 2}))
+            worksheet.write_string(row, 30, '', wb.add_format({'right': 2}))
+        
+        worksheet.write_string(17, 0, '', wb.add_format({'left': 2, 'top': 2}))
+        worksheet.write_string(17, 30, '', wb.add_format({'right': 2, 'top': 2}))
+        worksheet.write_string(40, 0, '', wb.add_format({'left': 2, 'bottom': 2}))
+        worksheet.write_string(40, 30, '', wb.add_format({'right': 2, 'bottom': 2}))
+        
+        for row, key, value in zip(range(18, 21), ['高', '总容积', '有效容积'], ['高', '', '最大有效容积（m³）']):
+            worksheet.merge_range('U{r}:V{r}'.format(r=row), '水箱', wb.add_format({'border': 2, 'align': 'center', 'valign': 'vcenter'}))
+            worksheet.merge_range('W{r}:X{r}'.format(r=row), key, wb.add_format({'border': 2, 'align': 'center', 'valign': 'vcenter'}))
+            if value:
+                worksheet.merge_range('Y{r}:AE{r}'.format(r=row), _data.get(value), wb.add_format({'border': 2, 'align': 'center', 'valign': 'vcenter'}))
+            else:
+                worksheet.merge_range('Y{r}:AE{r}'.format(r=row), int(_data.get('长')) * int(_data.get('宽')) * int(_data.get('高')), wb.add_format({'border': 2, 'align': 'center', 'valign': 'vcenter'}))
+
+        worksheet.merge_range('B{r}:H{r}'.format(r=19), '注：每个单元格表示为0.5×0.5m面积', wb.add_format({'align': 'center', 'valign': 'vcenter', 'font_size': 11}))
+        worksheet.merge_range('I{r}:P{r}'.format(r=22), '俯瞰图', wb.add_format({'align': 'center', 'valign': 'vcenter', 'font_size': 11}))
+        
+        length = int(_data.get('长'))
+        width = int(_data.get('宽'))
+        
+        start_col = (32 - length * 2) // 2
+        
+        worksheet.write_string(22, start_col + length, '{}m'.format(length), wb.add_format({'align': 'center', 'valign': 'vcenter', 'font_size': 11}))
+        worksheet.write_string(23 + width, start_col - 1, '{}m'.format(width), wb.add_format({'align': 'center', 'valign': 'vcenter', 'font_size': 11}))
+        
+        worksheet.merge_range(23, start_col, 23 + width * 2, start_col + length * 2, '', wb.add_format({'border': 2}))
+     
+
         
 if __name__ == '__main__':
-    sheet_one({}, filename='charsheet.xlsx', sheet1=False, sheet2=False)
-    # sheet_two({})
+    # sheet_one({}, filename='charsheet.xlsx', sheet1=False, sheet2=False)
+    sheet_two({'长': '5', '宽': '4', '高': '3'}, 'huatu.xlsx')
