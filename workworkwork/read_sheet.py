@@ -327,10 +327,10 @@ def get_pump_house():
             pickle.dump(_dict, wf)
         # break
         
-def get_water_tank():
-    all_data = get_data('water.xlsx')['Sheet1'][4:92]
-    
-    for row in all_data:
+def get_water_tank(sheet='Sheet1', s=0, e=243):
+    all_data = get_data('./09.xlsx')[sheet][s: e]
+    _sum = e - s
+    for index, row in enumerate(all_data, start=1):
         _dict = {}
         _dict['No'] = 'GB-{}-{}-{}'.format(row[2], row[3], row[4])
         _dict['小区名称'] = row[9]
@@ -347,9 +347,9 @@ def get_water_tank():
         _dict['维护单位:联系人'] = ''
         _dict['维护单位:联系电话'] = ''
         
-        _dict['物业公司:单位名称'] = row[11]
-        _dict['物业公司:联系人'] = row[12]
-        _dict['物业公司:联系电话'] = row[13]
+        _dict['物业公司:单位名称'] = row[11] or ''
+        _dict['物业公司:联系人'] = row[12] or ''
+        _dict['物业公司:联系电话'] = row[13] or ''
         
         _dict['建设单位:单位名称'] = ''
         _dict['建设单位:联系人'] = ''
@@ -361,29 +361,32 @@ def get_water_tank():
         
         _dict['水箱材质'] = row[23]
         _dict['控制方式'] = row[24]
-        _dict['进水口径'] = row[25] if row[25] is not None else ''
-        _dict['出水口径'] = row[26] if row[26] is not None else ''
-        _dict['排水状况'] = '顺畅'
-        _dict['消防水位（m）'] = ''
+        _dict['进水口径'] = row[25] or ''
+        _dict['出水口径'] = row[26] or ''
+        _dict['排水状况'] = row[27]
+        _dict['消防水位（m）'] = row[22]
         
         _dict['供水户数'] = row[15]
         _dict['供水楼栋范围'] = ''
         
         _dict['最大有效容积（m³）'] = row[19]
-        _dict['溢流口高度（m）'] = row[20] if row[20] is not None else ''
-        _dict['设定水位（m）'] = row[21] if row[21] is not None else ''
+        _dict['溢流口高度（m）'] = row[20] or ''
+        _dict['设定水位（m）'] = row[21] or ''
         
+        _dict['消防公用'] = '否' if _dict['消防水位（m）'] == '-' else '是'
         _dict['内外扶梯'] = '有'
         _dict['三孔防污'] = '有'
-        _dict['集水坑'] = '有'
+        _dict['集水坑'] = '有' if _dict['排水状况'] == '顺畅' else '无'
         
         _dict['资料核准人员'] = '敖荣健'
         
-        with open('./pickle_folder/water/{}'.format(_dict['No']), 'wb') as wf:
+        with open('./pickle_folder/water08/{}'.format(_dict['No']), 'wb') as wf:
             pickle.dump(_dict, wf)
+            
+        print('done {} ({}/{})'.format(_dict['小区名称'], index, _sum))
         
         
 if __name__ == '__main__':
-    get_pump_house()
-    # get_water_tank()
+    #get_pump_house()
+    get_water_tank()
     
