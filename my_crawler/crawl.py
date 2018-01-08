@@ -84,3 +84,12 @@ class Crawler:
                 w.cancel()
         finally:
             await self.close()
+
+
+def run_crawler(urls, crawler=Crawler):
+    _loop = asyncio.get_event_loop()
+    _crawler = crawler(urls, loop=_loop)
+    _loop.run_until_complete(_crawler.crawl())
+    _crawler.close()
+    _loop.close()
+
