@@ -27,6 +27,8 @@ class MockFetch:
         superfluous_dust: 分解多余卡所得到的总尘数
         already_have_dust: 已有卡对应的总尘数
 
+        整体逻辑为：
+            mock(循环开包) -> fetch(从卡池抽卡) -> calculate(更新已有卡库) -> compute_dust(分解卡，计算尘)
         """
         self.my_cards = {k: {} for k in RARITY}
         self.card_pool = {k: [] for k in RARITY}
