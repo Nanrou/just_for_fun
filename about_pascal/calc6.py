@@ -20,7 +20,7 @@
 INTEGER, EOF = 'INTEGER', 'EOF'
 PLUS, SUB, MUL, DIV = 'PLUS', 'SUB', 'MUL', 'DIV'
 OP = [PLUS, SUB, MUL, DIV]
-LEFT_BRACKET, RIGHT_BRACKET = '(', ')'
+LPARENT, RPARENT = '(', ')'
 
 
 class Token:
@@ -89,11 +89,11 @@ class Lexer:  # 这个就是根据字符串来生成token
 
             if self._current_char == '(':
                 self.advance()
-                return Token(LEFT_BRACKET, '(')
+                return Token(LPARENT, '(')
 
             if self._current_char == ')':
                 self.advance()
-                return Token(RIGHT_BRACKET, ')')
+                return Token(RPARENT, ')')
 
             self.error()
 
@@ -117,18 +117,17 @@ class Interpreter:
 
     def factor(self):  # 这是最底层的不可分因子。就是拿到当前数字，并往前移动
         _token = self._current_token
-        self.eat(INTEGER)
-        return _token.value
-
-    def bracket(self):
-        _final_res = self.factor()
-        if self._current_token.type in (LEFT_BRACKET, RIGHT_BRACKET):
-            pass
-
-        return _final_res
+        if _token.type == INTEGER:
+            self.eat(INTEGER)
+            return _token.value
+        elif _token.type == LPARENT:
+            self.eat(LPARENT)
+            _result = self.expr()  # 这里类似递归地调用expr，将括号内的部分看成不可分因子
+            self.eat(RPARENT)
+            return _result
 
     def term(self):
-        _final_res = self.bracket()
+        _final_res = self.factor()
         while self._current_token.type in (MUL, DIV):
             _op = self._current_token
             if _op.type == MUL:
