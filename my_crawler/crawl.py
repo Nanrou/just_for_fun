@@ -86,9 +86,9 @@ class Crawler:
             await self.close()
 
 
-def run_crawler(urls, crawler=Crawler):
+def run_crawler(urls, crawler=Crawler, *args, **kwargs):
     _loop = asyncio.get_event_loop()
-    _crawler = crawler(urls, loop=_loop)
+    _crawler = crawler(urls, loop=_loop, *args, **kwargs)
     _loop.run_until_complete(_crawler.crawl())
     _crawler.close()
     _loop.close()

@@ -23,9 +23,9 @@ class BloomFilter:
     具体误判率可以查表：http://pages.cs.wisc.edu/~cao/papers/summary-cache/node8.html
     """
 
-    def __init__(self, bit_size=1 << 20, seeds=None):
+    def __init__(self, bit_size=1 << 20, seeds=None, map=None):
         """
-        默认情况下，处理10万条数据的时候，误判率为0.00819
+        默认参数下，处理10万条数据的时候，误判率为0.00819
         :param bit_size: m值
         :param seeds: k值
         """
@@ -33,7 +33,9 @@ class BloomFilter:
         if seeds is None:
             seeds = [3, 5, 7, 11, 13, 31, 67]
         self._seeds = seeds
-        self._map = array('b', [0 for _ in range(self._bit_size)])  # 选择了用数组来存放记录，可以改用其他的结构，例如redis的bitmap
+        if map is None:  # 初始化
+            array('b', [0 for _ in range(self._bit_size)])  # 选择了用数组来存放记录，可以改用其他的结构，例如redis的bitmap
+        self._map = map
         self._hash_functions = []
         for seed in self._seeds:
             self._hash_functions.append(SimpleHash(self._bit_size, seed))
