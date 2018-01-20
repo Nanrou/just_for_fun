@@ -1,18 +1,25 @@
 from random import choice, random
 import pandas as pd
 
-RARITY = ['普通', '稀有', '史诗', '传说']
+RARITY = ['普通', '稀有', '史诗', '传说', '金普通', '金稀有', '金史诗', '金传说']
 TOTAL_DUST = 514 * 2 * 40 + 374 * 2 * 100 + 231 * 2 * 400 + 206 * 1600
 RAW_DUST = {'普通': 40, '稀有': 100, '史诗': 400, '传说': 1600}
 RESOLVE_DUST = {'普通': 5, '稀有': 20, '史诗': 100, '传说': 400}
-NORMAL_CARD = ['普通', '稀有', '史诗']
-LEGEND_CARD = ['传说']
+RESOLVE_GOLDEN_DUST = {'普通': 40, '稀有': 100, '史诗': 400, '传说': 1600}
+NORMAL_CARD = ['普通', '稀有', '史诗', '金普通', '金稀有', '金史诗']
+LEGEND_CARD = ['传说', '金传说']
 
-CHANCE_COMMON = 0.713
-CHANCE_RARE = 0.231
-CHANCE_EPIC = 0.043
-CHANCE_LEGEND = 0.013
-CHANCE_MAPPER = {k: v for k, v in zip(RARITY, [CHANCE_COMMON, CHANCE_RARE, CHANCE_EPIC, CHANCE_LEGEND])}
+CHANCE_COMMON = 0.7
+CHANCE_RARE = 0.214
+CHANCE_EPIC = 0.0428
+CHANCE_LEGEND = 0.0108
+CHANCE_GOLDEN_COMMON = 0.0147
+CHANCE_GOLDEN_RARE = 0.0137
+CHANCE_GOLDEN_EPIC = 0.00289
+CHANCE_GOLDEN_LEGEND = 0.00111
+CHANCE_MAPPER = {k: v for k, v in zip(RARITY, [CHANCE_COMMON, CHANCE_RARE, CHANCE_EPIC, CHANCE_LEGEND,
+                                               CHANCE_GOLDEN_COMMON, CHANCE_GOLDEN_RARE,
+                                               CHANCE_GOLDEN_EPIC, CHANCE_GOLDEN_LEGEND])}
 
 
 class MockFetch:
@@ -33,7 +40,7 @@ class MockFetch:
         self.my_cards = {k: {} for k in RARITY}
         self.card_pool = {k: [] for k in RARITY}
         self.init_card_pool(data_file)
-        self.duplicate_legend = set(self.card_pool['传说'])
+        self.duplicate_legend = {'传说': set(self.card_pool['传说']), '金传说': set(self.card_pool['金传说'])}
 
         self.count = 0
         self.superfluous_dust = 0
@@ -45,30 +52,41 @@ class MockFetch:
             _rarity, _name = row[1]['rarity'], row[1]['name']
             if _rarity in RARITY:
                 self.card_pool[_rarity].append(_name)
-                self.my_cards[_rarity][_name] = 0
+                self.card_pool['金' + _rarity].append(_name)
+                self.my_cards[_rarity][_name] = {'normal': 0, 'golden': 0}
 
     def finish(self):  # 结束的判断，就是分解得到的尘大于未获得卡的总尘数
         # print('多余的尘：{}，已有卡价值{}尘'.format(self.superfluous_dust, self.already_have_dust))
         return self.superfluous_dust > TOTAL_DUST - self.already_have_dust
 
     def fetch(self, rarity):  # 随机从目标卡池抽卡，对传说卡池有特殊判断
-        if rarity == '传说' and len(self.duplicate_legend):
-            _card = choice(self.duplicate_legend)
-            self.duplicate_legend.remove(_card)
+        if rarity in LEGEND_CARD and all(len(pool) for pool in self.duplicate_legend.values()):
+            _card = choice(self.duplicate_legend[rarity])
+            for pool in self.duplicate_legend.values():  # 两个传说池都去重
+                pool.remove(_card)
         else:
             _card = choice(self.card_pool[rarity])
         return _card
 
     def calculate(self, rarity, card):  # 对已有卡数量进行更新
-        self.my_cards[rarity][card] += 1
-        self.compute_dust(rarity, card)
+        if '金' in rarity:
+            self.my_cards[rarity[1:]][card]['golden'] += 1
+            self.compute_dust(rarity[1:], card)
+        else:
+            self.my_cards[rarity][card]['normal'] += 1
+            self.compute_dust(rarity, card)
 
     def compute_dust(self, rarity, card):  # 计算尘
         _upper_limit = 2 if rarity in NORMAL_CARD else 1
 
-        if self.my_cards[rarity][card] > _upper_limit:  # 卡数多余上限直接分解掉
-            self.superfluous_dust += RESOLVE_DUST[rarity]
-            self.my_cards[rarity][card] -= 1
+        if sum(self.my_cards[rarity][card].values()) > _upper_limit:  # 卡数多余上限直接分解掉
+            if self.my_cards[rarity][card]['golden'] > 0:
+                self.superfluous_dust += RESOLVE_GOLDEN_DUST[rarity]
+                self.my_cards[rarity][card]['golden'] -= 1
+            else:
+                self.superfluous_dust += RESOLVE_DUST[rarity]
+                self.my_cards[rarity][card]['normal'] -= 1
+
         else:
             self.already_have_dust += RAW_DUST[rarity]
 
