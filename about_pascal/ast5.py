@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 (INTEGER, REAL, PLUS, MINUS, MUL, INTEGER_DIV, FLOAT_DIV, LPAREN, RPAREN, ID, ASSIGN,
  BEGIN, END, SEMI, DOT, COLON, COMMA, EOF, VAR, PROGRAM) = (
     'INTEGER', 'REAL', 'PLUS', 'MINUS', 'MUL', 'INTEGER_DIV', 'FLOAT_DIV', '(', ')', 'ID', 'ASSIGN',
@@ -181,6 +183,55 @@ class Lexer:
             self.error()
 
         return Token(EOF, None)
+
+
+class Symbol:
+    def __init__(self, name, type_=None):
+        self.name = name
+        self.type = type_
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class BuiltinTypeSymbol(Symbol):
+    def __init__(self, name):
+        super().__init__(name)
+
+    def __str__(self):
+        return self.name
+
+
+class VarSymbol(Symbol):
+    def __init__(self, name, type_):
+        super().__init__(name, type_)
+
+    def __str__(self):
+        return '<{name}>: <{type_}>'.format(name=self.name, type_=self.type)
+
+
+class SymbolTable:
+    def __init__(self):
+        self._symbols = OrderedDict()
+        self._init_builtins()
+
+    def _init_builtins(self):
+        self.define(BuiltinTypeSymbol(INTEGER))
+        self.define(BuiltinTypeSymbol(REAL))
+
+    def __str__(self):
+        return 'Symbols: {symbols}'.format(symbols=[value for value in self._symbols.values()])
+
+    def __repr__(self):
+        return self.__str__()
+
+    def define(self, symbol):
+        print('Define: {}'.format(symbol))
+        self._symbols[symbol.name] = symbol
+
+    def lookup(self, name):
+        print('Lookup: {}'.format(name))
+        return self._symbols.get(name)
 
 
 class AST:
@@ -442,12 +493,65 @@ class NodeVisitor:
         visitor = getattr(self, method_name, self.generic_visit)
         return visitor(node)
 
+# 符号表目的是编译时发现一些静态错误，如未声明就调用，类型错误
+
+
+class SymbolTableBuilder(NodeVisitor):
+    def __init__(self):
+        self.symbol_table = SymbolTable()
+
+    def visit_Block(self, node):
+        for declaration in node.declarations:
+            self.visit(declaration)
+        self.visit(node.compound_statement)
+
+    def visit_Program(self, node):
+        self.visit(node.block)
+
+    def visit_BinOp(self, node):
+        self.visit(node.left)
+        self.visit(node.right)
+
+    def visit_Num(self, node):
+        pass
+
+    def visit_UnaryOp(self, node):
+        self.visit(node.expr)
+
+    def visit_Compound(self, node):
+        for child in node.children:
+            self.visit(child)
+
+    def visit_NoOp(self, node):
+        pass
+
+    def visit_VarDecl(self, node):
+        type_name = node.type_node.value
+        type_symbol = self.symbol_table.lookup(type_name)
+        var_name = node.var_node.value
+        var_symbol = VarSymbol(var_name, type_symbol)
+        self.symbol_table.define(var_symbol)
+
+    def visit_Assign(self, node):
+        var_name = node.left.value
+        var_symbol = self.symbol_table.lookup(var_name)
+        if var_symbol is None:
+            raise NameError(repr(var_name))
+        self.visit(node.right)
+
+    def visit_Var(self, node):
+        var_name = node.value
+        var_symbol = self.symbol_table.lookup(var_name)
+
+        if var_symbol is None:
+            raise NameError(repr(var_name))
+
 
 class Interpreter(NodeVisitor):
     GLOBAL_SCOPE = {}
 
-    def __init__(self, parser):
-        self._parser = parser
+    def __init__(self, tree):
+        self._tree = tree
 
     def visit_BinOp(self, node):  # 定义了具体的操作方法
         if node.op.type == PLUS:
@@ -505,43 +609,35 @@ class Interpreter(NodeVisitor):
         pass
 
     def interpret(self):
-        tree = self._parser.parse()  # 拿到的是树的根结点
-        if tree is None:
+        # tree = self._parser.parse()  # 拿到的是树的根结点
+        if self._tree is None:
             return ''
-        return self.visit(tree)
+        return self.visit(self._tree)
 
 
 if __name__ == '__main__':
-    """
-    添加处理了Program这些关键字的方法
-    """
-
     tt = '''\
-PROGRAM Part10;
+PROGRAM Part11;
 VAR
-   number     : INTEGER;
-   a, b, c, x : INTEGER;
-   y          : REAL;
+   number : INTEGER;
+   a, b   : INTEGER;
+   y      : REAL;
 
-BEGIN {Part10}
-   BEGIN
-      number := 2;
-      a := number;
-      b := 10 * a + 10 * number DIV 4;
-      c := a - - b
-   END;
-   x := 11;
-   y := 20 / 7 + 3.14;
-   { writeln('a = ', a); }
-   { writeln('b = ', b); }
-   { writeln('c = ', c); }
-   { writeln('number = ', number); }
-   { writeln('x = ', x); }
-   { writeln('y = ', y); }
-END. {Part10}
+BEGIN {Part11}
+   number := 2;
+   a := number ;
+   b := 10 * a + 10 * number DIV 4;
+   y := 20 / 7 + 3.14
+END.  {Part11}
 '''
     lexer = Lexer(tt)
     parser = Parser(lexer)
-    interpreter = Interpreter(parser)
+    tree = parser.parse()
+    symbol_builder = SymbolTableBuilder()
+    symbol_builder.visit(tree)
+    print('\nSymbol table contents:')
+    print(symbol_builder.symbol_table)
+
+    interpreter = Interpreter(tree)
     result = interpreter.interpret()
     print(interpreter.GLOBAL_SCOPE)
