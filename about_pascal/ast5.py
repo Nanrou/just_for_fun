@@ -146,11 +146,12 @@ class Lexer:
                 self.advance()
                 return Token(COMMA, ',')
 
-            if self._current_char == 'D' and self.peek() == 'I' and self.peek2() == 'V':
-                self.advance()
-                self.advance()
-                self.advance()
-                return Token(INTEGER_DIV, 'DIV')
+            # 不需要这一步，因为会在_id方法中处理这个关键字
+            # if self._current_char == 'D' and self.peek() == 'I' and self.peek2() == 'V':
+            #     self.advance()
+            #     self.advance()
+            #     self.advance()
+            #     return Token(INTEGER_DIV, 'DIV')
 
             if self._current_char == '+':
                 self.advance()  # 注意这里是要移动指针的
