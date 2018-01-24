@@ -1,0 +1,646 @@
+<style>
+
+    .container {
+        margin: 10rpx 18rpx;
+        background: #fbf9fe;
+    }
+
+    .xiongji {
+        width: 210rpx;
+        height: 210rpx;
+    }
+
+    .dice_view {
+        text-align: center;
+    }
+
+    .dice {
+        width: 120rpx;
+        height: 120rpx;
+        margin-right: 35rpx;
+        margin-left: 35rpx;
+    }
+
+    .dice100 {
+        margin: 10rpx 20rpx;
+        font-size: 66rpx;
+        text-align: center;
+    }
+
+    .content {
+        width: 100%;
+    }
+
+    ul {
+    }
+
+    li {
+        display: block;
+    }
+
+    span {
+        display: inline-block;
+        width: 65%;
+        padding-left: 75rpx;
+    }
+
+    .picker20 {
+        margin: 40rpx;
+        background: #fff;
+        text-align: center;
+
+    }
+
+
+</style>
+
+
+<template>
+    <view class="container">
+        <view class="header">
+            <view><image src="../common/images/xiongji.png" mode="aspectFit" class="xiongji"></image></view>
+            <view style="display: inline-block; margin: 10rpx 20rpx" >Dice
+                <button @tap="dice_in" style="display: inline;" >IN</button>
+                <button @tap="dice_out" style="display: inline;" >OUT</button>
+            </view>
+            <view style="display: inline-block; margin: 10rpx 20rpx">Age
+                <button @tap="age_in" style="display: inline;" >IN</button>
+                <button @tap="age_out" style="display: inline;" >OUT</button>
+            </view>
+        </view>
+
+        <view class="content">
+
+            <block wx:if="{{dice_part}}" >
+                <view animation="{{dice_animation}}">
+
+                    <view class="dice_view">
+                        <block wx:if="{{dice_action}}">
+                            <image src="../common/images/dice/dice_action.gif" mode="aspectFit" class="dice"></image>
+                            <image src="../common/images/dice/dice_action.gif" mode="aspectFit" class="dice"></image>
+                            <image src="../common/images/dice/dice_action.gif" mode="aspectFit" class="dice"></image>
+                        </block>
+                        <block wx:else>
+                            <block wx:for="{{init_dice}}">
+                                <image src="../common/images/dice/dice_{{item}}.png" mode="aspectFit" class="dice" ></image>
+                            </block>
+                        </block>
+                    </view>
+
+                    <view class="property">
+                        <ul>
+                            <block wx:for="{{property}}" wx:key="name">
+                                <li>
+                                    <span>{{item.name}}</span>
+                                    <button @tap="control_dice" data-index="{{index}}" style="display: inline;" disabled="{{item.dice_lock}}" >{{item.status}}</button>
+                                </li>
+                            </block>
+                        </ul>
+                    </view>
+
+                </view>
+            </block>
+
+            <block wx:if="{{age_part}}">
+                <view animation="{{age_animation}}">
+                    <text>选择年龄</text>
+                    <view>
+
+                        <slider bindchange="age_change" value="36" min="15" max="90" show-value disabled="{{age_slider_lock}}"/>
+                        <block wx:if="{{age}}">
+                            <view>
+                                <view>
+                                    <text>{{age}}岁</text>
+                                </view>
+                                <text>{{age_affect}}</text>
+                                <button @tap="age_btn" wx:if="{{age_btn_hidden}}">确认</button>
+                            </view>
+                        </block>
+
+
+                        <block wx:if="{{age_affect_block}}">
+                            <view wx:if="{{age < 20}}">
+                                <picker mode="multiSelector" bindchange="handle20picker" value="{{age_affect_20_multiArray_index}}" range="{{age_affect_20_multiArray}}">
+                                    <view class="picker20">
+                                        当前选择为： 力量-{{tmp_disable_str}}，体型-{{tmp_disable_siz}}。
+                                    </view>
+                                </picker>
+                                力量现在是{{property[0].sum - tmp_disable_str}}点，体型现在是{{property[2].sum - tmp_disable_siz}}点。
+                                <view>
+                                    教育 -5 后，现在是{{property[7].sum - 5}}点。
+                                </view>
+
+                                <view>
+                                    <view style="text-align: center; margin: 10rpx 18rpx">
+                                        <view style="margin: 10rpx 18rpx">
+                                            幸运女神会对你露出微信吗？
+                                        </view>
+                                        <view class="dice_view">
+                                            <block wx:if="{{dice_action}}">
+                                                <image src="../common/images/dice/dice_action.gif" mode="aspectFit" class="dice"></image>
+                                                <image src="../common/images/dice/dice_action.gif" mode="aspectFit" class="dice"></image>
+                                                <image src="../common/images/dice/dice_action.gif" mode="aspectFit" class="dice"></image>
+                                            </block>
+                                            <block wx:else>
+                                                <block wx:for="{{init_dice}}">
+                                                    <image src="../common/images/dice/dice_{{item}}.png" mode="aspectFit" class="dice" ></image>
+                                                </block>
+                                            </block>
+                                        </view>
+                                    </view>
+                                    <button @tap="reroll_luck_dice" disabled="{{reroll_luck_btn}}">{{reroll_luck_btn_text}}</button>
+                                </view>
+                                <view style="margin-top: 40rpx">
+                                    <button @tap="handle20next" type="primary" disabled="{{next_age}}">下一步</button>
+                                </view>
+
+                            </view>
+                                <view wx:elif="{{age < 40}}">
+                                    <view class="dice100">
+                                        {{dice100_decade}} {{dice100_single}}
+                                    </view>
+
+                                    <button @tap="handle40btn" disabled="{{age_40_btn}}">{{age_40_text}}</button>
+                                    <view style="margin-top: 40rpx">
+                                        <button @tap="handle40next" type="primary" disabled="{{next_age}}">下一步</button>
+                                    </view>
+                                </view>
+                                <view wx:else>
+                                    <view wx:if="{{age < 50}}">
+                                        <picker mode="multiSelector" bindchange="handle_age_picker" data-num="5" value="{{age_affect_multiArray_index}}" range="{{age_affect_multiArray[0]}}">
+                                            当前选择为：
+                                            <view class="picker20">
+                                                力量-{{tmp_disable_str}}，体质-{{tmp_disable_con}}，敏捷-{{tmp_disable_dex}}。
+                                            </view>
+                                        </picker>
+                                        力量现在是{{property[0].sum - tmp_disable_str}}点，体质现在是{{property[1].sum - tmp_disable_con}}点， 敏捷现在是{{property[3].sum - tmp_disable_dex}}点。
+                                        <view>
+                                            {{age_help_text}}
+                                        </view>
+                                        <view>
+                                            外貌 -5 后，现在是{{property[4].sum - 5}}点。
+                                        </view>
+                                        <view class="dice100">
+                                            {{dice100_decade}} {{dice100_single}}
+                                        </view>
+                                        <button @tap="handle_age_btn" data-index="0" data-times="0" disabled="{{age_btn[0]}}" style="margin-bottom: 18rpx">{{age_text[0]}}</button>
+                                        <button @tap="handle_age_btn" data-index="1" data-times="0" disabled="{{age_btn[1]}}" style="margin-bottom: 18rpx">{{age_text[1]}}</button>
+                                        <view style="margin-top: 40rpx">
+                                            <button @tap="handle50next" type="primary" disabled="{{next_age || punish_point_done}}">下一步</button>
+                                        </view>
+                                    </view>
+                                    <view wx:elif="{{age < 60}}">
+                                        小于19
+                                    </view>
+                                    <view wx:elif="{{age < 70}}">
+                                        小于19
+                                    </view>
+                                    <view wx:elif="{{age < 80}}">
+                                        小于19
+                                    </view>
+                                    <view wx:else>
+                                        小于19
+                                    </view>
+                                </view>
+
+                        </block>
+                    </view>
+                </view>
+            </block>
+        </view>
+    </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+import MyInterval from '../utils/MyInterval'
+
+export default class IndexPage extends wepy.page {
+
+    customData = {};  // 自定义数据
+
+    customFunction ()　{}//自定义方法
+
+    // 控制骰子动作的启停
+    control_dice(e) {
+        this.dice_action = !this.dice_action;
+        let index = e.currentTarget.dataset.index;
+
+        for (let i=0;i<this.property.length;i++) {
+
+            if (i === index) {
+                if (this.dice_action) {
+                    this.property[i].status = 'Stop';
+                } else {
+
+                    let tmp_dice = [];
+                    for (let i=0;i<2;i++) {
+                      tmp_dice.push(Math.floor(Math.random()*6 + 1))
+                    }
+                    if (index === 6 || index === 7 ) {
+                        tmp_dice.push(6)
+                    } else {
+                        tmp_dice.push(Math.floor(Math.random()*6 + 1))
+                    }
+
+                    let sum = 0;
+                    for (let i in tmp_dice) {sum += tmp_dice[i]}
+                    sum *= 5;
+                    this.property[i].status = sum;
+                    this.property[i].sum = sum;
+                    this.init_dice = tmp_dice;
+                    this.property[i].dice_lock = true;
+                    this.dice_count += 1;
+                          }
+                  continue
+            }
+
+            if (this.property[i].sum === 0) {
+                this.property[i].dice_lock = !this.property[i].dice_lock
+            }
+        }
+
+        if (this.dice_count === this.property.length) {
+            this.dice_out()
+        }
+    }
+
+    dice_in() {
+
+        this.dice_part=true;
+        this.$apply();
+
+        let animation = wx.createAnimation({
+            duration: 800,
+            transformOrigin: "50% 50%"
+        })
+        animation.scale(1, 1).opacity(1).step()
+        this.dice_animation = animation.export()
+
+    }
+
+    dice_out(time) {
+        if (typeof time !== "number"){
+            time = 800
+        }
+        let animation = wx.createAnimation({
+            duration: time,
+            transformOrigin: "50% 20%"
+        })
+        animation.scale(0, 0).opacity(0).step()
+        this.dice_animation = animation.export()
+
+        setTimeout(() => {
+            this.dice_part = false;
+            this.init_dice = [1, 1, 1]
+            this.$apply();
+        }, 1000);
+    }
+
+    age_change(e) {
+        let age = e.detail.value
+        for (let i in this.age_data) {
+            if (age <= this.age_data[i].age) {
+                this.age_affect = this.age_data[i].text
+                break
+            }
+        }
+        this.age = age;
+    }
+
+    age_btn() {
+        this.age_affect_block = true
+        this.age_slider_lock = true
+        this.age_btn_hidden = false
+    }
+
+    handle20picker(e) {
+        let index = e.detail.value
+        if (index[0] === 0) {
+            this.tmp_disable_str = index[1]
+            this.tmp_disable_siz = 5 - index[1]
+        } else {
+            this.tmp_disable_siz = index[1]
+            this.tmp_disable_str = 5 - index[1]
+        }
+
+
+        this.age_affect_20_multiArray_index = index
+
+    }
+
+    // 重掷幸运
+    reroll_luck_dice() {
+        this.dice_action = !this.dice_action;
+        if (!this.dice_action) {
+            let sum = 0
+            let tmp_dice = [];
+            for (let i=0; i<3; i++) {
+                let n = Math.floor(Math.random()*6 + 1)
+                tmp_dice.push(n)
+                sum += n
+            }
+            sum *= 5
+            if (sum < this.property[8].sum){
+                this.reroll_luck_btn_text = '没事发生，现在你的幸运还是' + this.property[8].sum
+            } else {
+                this.property[8].sum = sum
+                this.reroll_luck_btn_text = '哇喔，你现在的幸运提高到' + this.property[8].sum + '了'
+            }
+            this.reroll_luck_btn = true
+            this.init_dice = tmp_dice
+            this.next_age = false
+
+
+        } else {
+            this.reroll_luck_btn_text = 'Stop'
+        }
+    }
+
+    handle20next() {
+        this.property[0].sum -= this.tmp_disable_str
+        this.property[2].sum -= this.tmp_disable_siz
+        this.age_out()
+    }
+
+    handle40btn() {
+        this.age_40_btn = true
+        this.control_dice100()
+        setTimeout(() => {
+            let res = this.dice100_decade * 10 + this.dice100_single
+            if (res > this.property[7].sum) {
+                let tmp = Math.floor(Math.random()*10 + 1)
+                this.property[7].sum += tmp
+                this.age_40_text = '看来你从岁月的流逝中获得了一些知识，你的edu提高了' + tmp + ',现在是' + this.property[7].sum + '了'
+            } else {
+                this.age_40_text = '看来你并没有从岁月的流逝中获得太多知识，你的edu还是' + this.property[7].sum
+            }
+            this.next_age = false
+            this.$apply()
+        }, 1300)
+    }
+
+    handle40next() {
+        this.age_out()
+    }
+
+    handle_age_picker(e) {
+        let index = e.detail.value
+        let num = e.currentTarget.dataset.num
+        this.tmp_disable_str = index[0]
+        this.tmp_disable_con = index[1]
+        this.tmp_disable_dex = index[2]
+
+        let dis = index[0] + index[1] + index[2] - num
+        if (dis === 0) {
+            this.age_help_text = '惩罚点已调整正确'
+            this.punish_point_done = false
+        } else if (dis > 0) {
+            this.age_help_text = '请调整一下，现在还要再减去' + dis + '点'
+            this.punish_point_done = true
+        } else {
+            this.age_help_text = '请调整一下，现在超过了' + dis + '点'
+            this.punish_point_done = true
+        }
+
+
+    }
+
+    handle_age_btn(e) {
+        let index = parseInt(e.currentTarget.dataset.index)
+        let times = this.age_edu_times[e.currentTarget.dataset.times]
+        this.age_btn[index] = true
+
+        this.control_dice100()
+        setTimeout(() => {
+            let res = this.dice100_decade * 10 + this.dice100_single
+            if (res > this.property[7].sum) {
+                let tmp = Math.floor(Math.random()*10 + 1)
+                this.property[7].sum += tmp
+                this.age_text[index] = '看来你从岁月的流逝中获得了一些知识，你的edu提高了' + tmp + ',现在是' +  this.property[7].sum + '了'
+            } else {
+                this.age_text[index] = '看来你并没有从岁月的流逝中获得太多知识' + this.property[7].sum
+            }
+            console.log(index + 1,  times, index+1 < times)
+            if (index + 1 < times) {
+                console.log(this.age_btn)
+                this.age_btn[index+1] = false
+                console.log(this.age_btn)
+            } else {
+                this.next_age = false
+            }
+            this.$apply()
+        }, 1300)
+    }
+
+    control_dice100() {
+        new MyInterval({
+            loops: Math.floor(Math.random()*10 + 1) + 10,
+            onUpdate: () => {
+                this.dice100_decade = Math.floor(Math.random()*10)
+                this.$apply()
+            }
+        })
+        new MyInterval({
+            loops: Math.floor(Math.random()*10 + 1) + 10,
+            onUpdate: () => {
+                this.dice100_single = Math.floor(Math.random()*10)
+                this.$apply()
+            }
+        })
+    }
+
+    age_in() {
+
+        this.age_part=true;
+        this.$apply();
+
+        let animation = wx.createAnimation({
+            duration: 800,
+            transformOrigin: "50% 50%"
+        })
+        animation.scale(1, 1).opacity(1).step()
+        this.age_animation = animation.export()
+
+    }
+
+    age_out(time) {
+        if (typeof time !== "number"){
+            time = 800
+        }
+        let animation = wx.createAnimation({
+            duration: time,
+            transformOrigin: "50% 20%"
+        })
+        animation.scale(0, 0).opacity(0).step()
+        this.age_animation = animation.export()
+
+        setTimeout(() => {
+            this.age_part = false;
+            this.init_dice = [1, 1, 1]
+            this.$apply();
+        }, 1000);
+    }
+
+    onLoad () {
+        let job_data = require('../common/data/job.js');
+        let age_data = require('../common/data/age_affect_data.js');
+        this.age_data = age_data.age_affect_data;
+        console.log(job_data)
+        console.log(age_data)
+        this.dice_out(0);
+        this.age_out(0);
+    }  // 在Page和Component共用的生命周期函数
+
+    onShow () {}  // 只在Page中存在的页面生命周期函数
+
+    config = {};  // 只在Page实例中存在的配置数据，对应于原生的page.json文件
+
+    data = {
+        dice_part: true,
+        dice_animation: {},
+        init_dice: [1, 1, 1],
+        dice_action: false,
+        dice_count: 0,
+
+
+        property: [
+            { name: '力量(3D6):', sum: 0, _type: 'str', status: 'Roll', dice_lock: false },
+            { name: '体质(3D6):', sum: 0, _type: 'con', status: 'Roll', dice_lock: false },
+            { name: '体型(3D6):', sum: 0, _type: 'siz', status: 'Roll', dice_lock: false },
+            { name: '敏捷(3D6):', sum: 0, _type: 'dex', status: 'Roll', dice_lock: false },
+            { name: '外貌(3D6):', sum: 0, _type: 'app', status: 'Roll', dice_lock: false },
+            { name: '意志(3D6):', sum: 0, _type: 'pow', status: 'Roll', dice_lock: false },
+            { name: '智力(2D6+6):', sum: 0, _type: 'int', status: 'Roll', dice_lock: false},
+            { name: '教育(2D6+6):', sum: 0, _type: 'edu', status: 'Roll', dice_lock: false },
+            { name: '幸运(3D6):', sum: 0, _type: 'luck', status: 'Roll', dice_lock: false },
+        ],
+
+
+        age_part: true,
+        age_animation: {},
+        age_data: '',
+        age: 0,
+        age_affect: '',
+        age_slider_lock: false,
+        age_affect_block: false,
+        age_btn_hidden: true,
+
+        age_affect_20_multiArray: [['力量(STR)', '体型(CON)'], [-0, -1, -2, -3, -4, -5]],
+        age_affect_20_multiArray_index: [0, 0],
+
+        tmp_disable_str: 0,
+        tmp_disable_siz: 5,
+        tmp_disable_con: 0,
+        tmp_disable_dex: 0,
+
+        reroll_luck_btn: false,
+        reroll_luck_btn_text: '再骰一次幸运',
+
+        next_age: true,
+
+        dice100_decade: 0,
+        dice100_single: 0,
+
+        age_40_btn: false,
+        age_40_text: '看一下岁月是否使你进步了',
+
+        age_affect_50_multiArray: [
+            [0, -1, -2, -3, -4, -5],
+            [0, -1, -2, -3, -4, -5],
+            [0, -1, -2, -3, -4, -5],
+        ],
+
+        age_affect_60_multiArray: [
+            [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10],
+            [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10],
+            [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10],
+        ],
+
+        age_affect_70_multiArray: [
+            [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20],
+            [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20],
+            [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20],
+        ],
+
+        age_affect_80_multiArray: [
+            [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -24, -25, -26, -27, -28, -29, -30, -31, -32, -33, -34, -35, -36, -37, -38, -39, -40],
+            [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -24, -25, -26, -27, -28, -29, -30, -31, -32, -33, -34, -35, -36, -37, -38, -39, -40],
+            [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -24, -25, -26, -27, -28, -29, -30, -31, -32, -33, -34, -35, -36, -37, -38, -39, -40],
+
+        ],
+
+        age_affect_90_multiArray: [
+            [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -24, -25, -26, -27, -28, -29, -30, -31, -32, -33, -34, -35, -36, -37, -38, -39, -40, -41, -42, -43, -44, -45, -46, -47, -48, -49, -50, -51, -52, -53, -54, -55, -56, -57, -58, -59, -60, -61, -62, -63, -64, -65, -66, -67, -68, -69, -70, -71, -72, -73, -74, -75, -76, -77, -78, -79, -80],
+            [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -24, -25, -26, -27, -28, -29, -30, -31, -32, -33, -34, -35, -36, -37, -38, -39, -40, -41, -42, -43, -44, -45, -46, -47, -48, -49, -50, -51, -52, -53, -54, -55, -56, -57, -58, -59, -60, -61, -62, -63, -64, -65, -66, -67, -68, -69, -70, -71, -72, -73, -74, -75, -76, -77, -78, -79, -80],
+            [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -24, -25, -26, -27, -28, -29, -30, -31, -32, -33, -34, -35, -36, -37, -38, -39, -40, -41, -42, -43, -44, -45, -46, -47, -48, -49, -50, -51, -52, -53, -54, -55, -56, -57, -58, -59, -60, -61, -62, -63, -64, -65, -66, -67, -68, -69, -70, -71, -72, -73, -74, -75, -76, -77, -78, -79, -80],
+        ],
+
+        age_affect_multiArray: [
+            //50
+            [
+                [0, -1, -2, -3, -4, -5],
+                [0, -1, -2, -3, -4, -5],
+                [0, -1, -2, -3, -4, -5],
+            ],
+            //60
+            [
+                [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10],
+                [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10],
+                [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10],
+            ],
+            //70
+            [
+                [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20],
+                [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20],
+                [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20],
+            ],
+            //80
+            [
+                [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -24, -25, -26, -27, -28, -29, -30, -31, -32, -33, -34, -35, -36, -37, -38, -39, -40],
+                [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -24, -25, -26, -27, -28, -29, -30, -31, -32, -33, -34, -35, -36, -37, -38, -39, -40],
+                [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -24, -25, -26, -27, -28, -29, -30, -31, -32, -33, -34, -35, -36, -37, -38, -39, -40],
+            ],
+            //90
+            [
+                [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -24, -25, -26, -27, -28, -29, -30, -31, -32, -33, -34, -35, -36, -37, -38, -39, -40, -41, -42, -43, -44, -45, -46, -47, -48, -49, -50, -51, -52, -53, -54, -55, -56, -57, -58, -59, -60, -61, -62, -63, -64, -65, -66, -67, -68, -69, -70, -71, -72, -73, -74, -75, -76, -77, -78, -79, -80],
+                [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -24, -25, -26, -27, -28, -29, -30, -31, -32, -33, -34, -35, -36, -37, -38, -39, -40, -41, -42, -43, -44, -45, -46, -47, -48, -49, -50, -51, -52, -53, -54, -55, -56, -57, -58, -59, -60, -61, -62, -63, -64, -65, -66, -67, -68, -69, -70, -71, -72, -73, -74, -75, -76, -77, -78, -79, -80],
+                [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -24, -25, -26, -27, -28, -29, -30, -31, -32, -33, -34, -35, -36, -37, -38, -39, -40, -41, -42, -43, -44, -45, -46, -47, -48, -49, -50, -51, -52, -53, -54, -55, -56, -57, -58, -59, -60, -61, -62, -63, -64, -65, -66, -67, -68, -69, -70, -71, -72, -73, -74, -75, -76, -77, -78, -79, -80],
+            ],
+
+        ],
+
+        age_affect_multiArray_index: [0, 0, 0],
+        age_help_text: '',
+
+        age_edu_times: [2, 3, 4, 4, 4],
+        age_btn: [false, true, true, true, true],
+        age_text: ['看一下岁月是否使你进步了', '再看一下岁月是否使你进步了', '再再看一下岁月是否使你进步了', '再再再看一下岁月是否使你进步了', '再再再再看一下岁月是否使你进步了'],
+
+        punish_point_done: true,
+
+
+
+    };  // 页面所需数据均需在这里声明，可用于模板数据绑定
+
+    components = {};  // 声明页面中所引用的组件，或声明组件中所引用的子组件
+
+    mixins = [];  // 声明页面所引用的Mixin实例
+
+    computed = {
+
+    };  // 声明计算属性（详见后文介绍）
+
+    watch = {
+
+    };  // 声明数据watcher（详见后文介绍）
+
+    methods = {};  // 声明页面wxml中标签的事件处理函数。注意，此处只用于声明页面wxml中标签的bind、catch事件，自定义方法需以自定义方法的方式声明
+
+    events = {};  // 声明组件之间的事件处理函数
+
+
+
+  }
+
+</script>
