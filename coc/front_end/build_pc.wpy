@@ -22,7 +22,7 @@
     }
 
     .dice100 {
-        margin: 10rpx 20rpx;
+        margin: 20rpx 10rpx;
         font-size: 66rpx;
         text-align: center;
     }
@@ -44,6 +44,10 @@
         padding-left: 75rpx;
     }
 
+    picker {
+        margin: 20rpx 10rpx;
+    }
+
     .picker20 {
         margin: 40rpx;
         background: #fff;
@@ -51,6 +55,12 @@
 
     }
 
+    .line {
+        width: 100%;
+        height: 4rpx;
+        background: lightgray;
+        margin: 20rpx 0rpx;
+    }
 
 </style>
 
@@ -113,12 +123,13 @@
                                     <text>{{age}}岁</text>
                                 </view>
                                 <text>{{age_affect}}</text>
-                                <button @tap="age_btn" wx:if="{{age_btn_hidden}}">确认</button>
+                                <button @tap="age_btn" wx:if="{{age_btn_hidden}}" style="margin-top: 20rpx">请谨慎确认，回不了头的了喔</button>
                             </view>
                         </block>
 
 
                         <block wx:if="{{age_affect_block}}">
+                            <view class="line"></view>
                             <view wx:if="{{age < 20}}">
                                 <picker mode="multiSelector" bindchange="handle20picker" value="{{age_affect_20_multiArray_index}}" range="{{age_affect_20_multiArray}}">
                                     <view class="picker20">
@@ -155,54 +166,140 @@
                                 </view>
 
                             </view>
-                                <view wx:elif="{{age < 40}}">
-                                    <view class="dice100">
-                                        {{dice100_decade}} {{dice100_single}}
-                                    </view>
+                            <view wx:elif="{{age < 40}}">
+                                <view class="dice100">
+                                    {{dice100_decade}} {{dice100_single}}
+                                </view>
 
-                                    <button @tap="handle40btn" disabled="{{age_40_btn}}">{{age_40_text}}</button>
+                                <button @tap="handle40btn" disabled="{{age_40_btn}}">{{age_40_text}}</button>
+                                <view style="margin-top: 40rpx">
+                                    <button @tap="handle40next" type="primary" disabled="{{next_age}}">下一步</button>
+                                </view>
+                            </view>
+                            <view wx:else>
+                                <view wx:if="{{age < 50}}">
+                                    <picker mode="multiSelector" bindchange="handle_age_picker" data-num="5" value="{{age_affect_multiArray_index}}" range="{{age_affect_multiArray[0]}}">
+                                        当前选择为：
+                                        <view class="picker20">
+                                            力量-{{tmp_disable_str}}，体质-{{tmp_disable_con}}，敏捷-{{tmp_disable_dex}}。
+                                        </view>
+                                        {{age_help_text}}
+                                    </picker>
+                                <view>
+                                    力量现在是{{property[0].sum - tmp_disable_str}}点，体质现在是{{property[1].sum - tmp_disable_con}}点， 敏捷现在是{{property[3].sum - tmp_disable_dex}}点。
+                                </view>
+                                <view>
+                                    外貌 -5 后，现在是{{property[4].sum - 5}}点。
+                                </view>
+                                <view class="dice100">
+                                    {{dice100_decade}} {{dice100_single}}
+                                </view>
+                                <button @tap="handle_age_btn" data-index="0" data-times_index="0" disabled="{{age_btn[0]}}" style="margin-bottom: 18rpx">{{age_text[0]}}</button>
+                                <button @tap="handle_age_btn" data-index="1" data-times_index="0" disabled="{{age_btn[1]}}" style="margin-bottom: 18rpx">{{age_text[1]}}</button>
+                                <view style="margin-top: 40rpx">
+                                    <button @tap="handle_age_next" data-app="5" type="primary" disabled="{{next_age || punish_point_done}}">下一步</button>
+                                </view>
+                                </view>
+                                <view wx:elif="{{age < 60}}">
+                                    <picker mode="multiSelector" bindchange="handle_age_picker" data-num="10" value="{{age_affect_multiArray_index}}" range="{{age_affect_multiArray[1]}}">
+                                    当前选择为：
+                                    <view class="picker20">
+                                    力量-{{tmp_disable_str}}，体质-{{tmp_disable_con}}，敏捷-{{tmp_disable_dex}}。
+                                    </view>
+                                    {{age_help_text}}
+                                    </picker>
+                                    <view>
+                                    力量现在是{{property[0].sum - tmp_disable_str}}点，体质现在是{{property[1].sum - tmp_disable_con}}点， 敏捷现在是{{property[3].sum - tmp_disable_dex}}点。
+                                    </view>
+                                    <view>
+                                    外貌 -10 后，现在是{{property[4].sum - 10}}点。
+                                    </view>
+                                    <view class="dice100">
+                                    {{dice100_decade}} {{dice100_single}}
+                                    </view>
+                                    <button @tap="handle_age_btn" data-index="0" data-times_index="1" disabled="{{age_btn[0]}}" style="margin-bottom: 18rpx">{{age_text[0]}}</button>
+                                    <button @tap="handle_age_btn" data-index="1" data-times_index="1" disabled="{{age_btn[1]}}" style="margin-bottom: 18rpx">{{age_text[1]}}</button>
+                                    <button @tap="handle_age_btn" data-index="2" data-times_index="1" disabled="{{age_btn[2]}}" style="margin-bottom: 18rpx">{{age_text[2]}}</button>
                                     <view style="margin-top: 40rpx">
-                                        <button @tap="handle40next" type="primary" disabled="{{next_age}}">下一步</button>
+                                    <button @tap="handle_age_next" data-app="10" type="primary" disabled="{{next_age || punish_point_done}}">下一步</button>
+                                    </view>
+                                </view>
+                                <view wx:elif="{{age < 70}}">
+                                    <picker mode="multiSelector" bindchange="handle_age_picker" data-num="20" value="{{age_affect_multiArray_index}}" range="{{age_affect_multiArray[2]}}">
+                                    当前选择为：
+                                    <view class="picker20">
+                                    力量-{{tmp_disable_str}}，体质-{{tmp_disable_con}}，敏捷-{{tmp_disable_dex}}。
+                                    </view>
+                                    {{age_help_text}}
+                                    </picker>
+                                    <view>
+                                    力量现在是{{property[0].sum - tmp_disable_str}}点，体质现在是{{property[1].sum - tmp_disable_con}}点， 敏捷现在是{{property[3].sum - tmp_disable_dex}}点。
+                                    </view>
+                                    <view>
+                                    外貌 -15 后，现在是{{property[4].sum - 15}}点。
+                                    </view>
+                                    <view class="dice100">
+                                    {{dice100_decade}} {{dice100_single}}
+                                    </view>
+                                    <button @tap="handle_age_btn" data-index="0" data-times_index="2" disabled="{{age_btn[0]}}" style="margin-bottom: 18rpx">{{age_text[0]}}</button>
+                                    <button @tap="handle_age_btn" data-index="1" data-times_index="2" disabled="{{age_btn[1]}}" style="margin-bottom: 18rpx">{{age_text[1]}}</button>
+                                    <button @tap="handle_age_btn" data-index="2" data-times_index="2" disabled="{{age_btn[2]}}" style="margin-bottom: 18rpx">{{age_text[2]}}</button>
+                                    <button @tap="handle_age_btn" data-index="3" data-times_index="2" disabled="{{age_btn[3]}}" style="margin-bottom: 18rpx">{{age_text[3]}}</button>
+                                    <view style="margin-top: 40rpx">
+                                    <button @tap="handle_age_next" data-app="15" type="primary" disabled="{{next_age || punish_point_done}}">下一步</button>
+                                    </view>
+                                </view>
+                                <view wx:elif="{{age < 80}}">
+                                    <picker mode="multiSelector" bindchange="handle_age_picker" data-num="40" value="{{age_affect_multiArray_index}}" range="{{age_affect_multiArray[3]}}">
+                                    当前选择为：
+                                    <view class="picker20">
+                                    力量-{{tmp_disable_str}}，体质-{{tmp_disable_con}}，敏捷-{{tmp_disable_dex}}。
+                                    </view>
+                                    {{age_help_text}}
+                                    </picker>
+                                    <view>
+                                    力量现在是{{property[0].sum - tmp_disable_str}}点，体质现在是{{property[1].sum - tmp_disable_con}}点， 敏捷现在是{{property[3].sum - tmp_disable_dex}}点。
+                                    </view>
+                                    <view>
+                                    外貌 -20 后，现在是{{property[4].sum - 20}}点。
+                                    </view>
+                                    <view class="dice100">
+                                    {{dice100_decade}} {{dice100_single}}
+                                    </view>
+                                    <button @tap="handle_age_btn" data-index="0" data-times_index="3" disabled="{{age_btn[0]}}" style="margin-bottom: 18rpx">{{age_text[0]}}</button>
+                                    <button @tap="handle_age_btn" data-index="1" data-times_index="3" disabled="{{age_btn[1]}}" style="margin-bottom: 18rpx">{{age_text[1]}}</button>
+                                    <button @tap="handle_age_btn" data-index="2" data-times_index="3" disabled="{{age_btn[2]}}" style="margin-bottom: 18rpx">{{age_text[2]}}</button>
+                                    <button @tap="handle_age_btn" data-index="3" data-times_index="3" disabled="{{age_btn[3]}}" style="margin-bottom: 18rpx">{{age_text[3]}}</button>
+                                    <view style="margin-top: 40rpx">
+                                    <button @tap="handle_age_next" data-app="20" type="primary" disabled="{{next_age || punish_point_done}}">下一步</button>
                                     </view>
                                 </view>
                                 <view wx:else>
-                                    <view wx:if="{{age < 50}}">
-                                        <picker mode="multiSelector" bindchange="handle_age_picker" data-num="5" value="{{age_affect_multiArray_index}}" range="{{age_affect_multiArray[0]}}">
-                                            当前选择为：
-                                            <view class="picker20">
-                                                力量-{{tmp_disable_str}}，体质-{{tmp_disable_con}}，敏捷-{{tmp_disable_dex}}。
-                                            </view>
-                                        </picker>
-                                        力量现在是{{property[0].sum - tmp_disable_str}}点，体质现在是{{property[1].sum - tmp_disable_con}}点， 敏捷现在是{{property[3].sum - tmp_disable_dex}}点。
-                                        <view>
-                                            {{age_help_text}}
-                                        </view>
-                                        <view>
-                                            外貌 -5 后，现在是{{property[4].sum - 5}}点。
-                                        </view>
-                                        <view class="dice100">
-                                            {{dice100_decade}} {{dice100_single}}
-                                        </view>
-                                        <button @tap="handle_age_btn" data-index="0" data-times="0" disabled="{{age_btn[0]}}" style="margin-bottom: 18rpx">{{age_text[0]}}</button>
-                                        <button @tap="handle_age_btn" data-index="1" data-times="0" disabled="{{age_btn[1]}}" style="margin-bottom: 18rpx">{{age_text[1]}}</button>
-                                        <view style="margin-top: 40rpx">
-                                            <button @tap="handle50next" type="primary" disabled="{{next_age || punish_point_done}}">下一步</button>
-                                        </view>
-                                    </view>
-                                    <view wx:elif="{{age < 60}}">
-                                        小于19
-                                    </view>
-                                    <view wx:elif="{{age < 70}}">
-                                        小于19
-                                    </view>
-                                    <view wx:elif="{{age < 80}}">
-                                        小于19
-                                    </view>
-                                    <view wx:else>
-                                        小于19
-                                    </view>
-                                </view>
-
+                                     <picker mode="multiSelector" bindchange="handle_age_picker" data-num="80" value="{{age_affect_multiArray_index}}" range="{{age_affect_multiArray[4]}}">
+                                     当前选择为：
+                                     <view class="picker20">
+                                     力量-{{tmp_disable_str}}，体质-{{tmp_disable_con}}，敏捷-{{tmp_disable_dex}}。
+                                     </view>
+                                     {{age_help_text}}
+                                     </picker>
+                                     <view>
+                                     力量现在是{{property[0].sum - tmp_disable_str}}点，体质现在是{{property[1].sum - tmp_disable_con}}点， 敏捷现在是{{property[3].sum - tmp_disable_dex}}点。
+                                     </view>
+                                     <view>
+                                     外貌 -25 后，现在是{{property[4].sum - 25}}点。
+                                     </view>
+                                     <view class="dice100">
+                                     {{dice100_decade}} {{dice100_single}}
+                                     </view>
+                                     <button @tap="handle_age_btn" data-index="0" data-times_index="3" disabled="{{age_btn[0]}}" style="margin-bottom: 18rpx">{{age_text[0]}}</button>
+                                     <button @tap="handle_age_btn" data-index="1" data-times_index="3" disabled="{{age_btn[1]}}" style="margin-bottom: 18rpx">{{age_text[1]}}</button>
+                                     <button @tap="handle_age_btn" data-index="2" data-times_index="3" disabled="{{age_btn[2]}}" style="margin-bottom: 18rpx">{{age_text[2]}}</button>
+                                     <button @tap="handle_age_btn" data-index="3" data-times_index="3" disabled="{{age_btn[3]}}" style="margin-bottom: 18rpx">{{age_text[3]}}</button>
+                                     <view style="margin-top: 40rpx">
+                                     <button @tap="handle_age_next" data-app="25" type="primary" disabled="{{next_age || punish_point_done}}">下一步</button>
+                                     </view>
+                                 </view>
+                            </view>
                         </block>
                     </view>
                 </view>
@@ -384,9 +481,11 @@ export default class IndexPage extends wepy.page {
         this.age_out()
     }
 
+    // 惩罚点的逻辑
     handle_age_picker(e) {
         let index = e.detail.value
         let num = e.currentTarget.dataset.num
+
         this.tmp_disable_str = index[0]
         this.tmp_disable_con = index[1]
         this.tmp_disable_dex = index[2]
@@ -395,8 +494,8 @@ export default class IndexPage extends wepy.page {
         if (dis === 0) {
             this.age_help_text = '惩罚点已调整正确'
             this.punish_point_done = false
-        } else if (dis > 0) {
-            this.age_help_text = '请调整一下，现在还要再减去' + dis + '点'
+        } else if (dis < 0) {
+            this.age_help_text = '请调整一下，现在还要再减去' + Math.abs(dis) + '点'
             this.punish_point_done = true
         } else {
             this.age_help_text = '请调整一下，现在超过了' + dis + '点'
@@ -406,9 +505,10 @@ export default class IndexPage extends wepy.page {
 
     }
 
+    // 教育增加的判断
     handle_age_btn(e) {
         let index = parseInt(e.currentTarget.dataset.index)
-        let times = this.age_edu_times[e.currentTarget.dataset.times]
+        let times = this.age_edu_times[e.currentTarget.dataset.times_index]
         this.age_btn[index] = true
 
         this.control_dice100()
@@ -419,18 +519,24 @@ export default class IndexPage extends wepy.page {
                 this.property[7].sum += tmp
                 this.age_text[index] = '看来你从岁月的流逝中获得了一些知识，你的edu提高了' + tmp + ',现在是' +  this.property[7].sum + '了'
             } else {
-                this.age_text[index] = '看来你并没有从岁月的流逝中获得太多知识' + this.property[7].sum
+                this.age_text[index] = '看来你并没有从岁月的流逝中获得太多知识，教育还是停留在' + this.property[7].sum
             }
-            console.log(index + 1,  times, index+1 < times)
             if (index + 1 < times) {
-                console.log(this.age_btn)
                 this.age_btn[index+1] = false
-                console.log(this.age_btn)
             } else {
                 this.next_age = false
             }
             this.$apply()
         }, 1300)
+    }
+
+    handle_age_next(e) {
+        this.property[4].sum -=e.currentTarget.dataset.app
+
+        this.property[0].sum -= this.tmp_disable_str
+        this.property[1].sum -= this.tmp_disable_con
+        this.property[3].sum -= this.tmp_disable_dex
+        this.age_out()
     }
 
     control_dice100() {
@@ -611,11 +717,11 @@ export default class IndexPage extends wepy.page {
         ],
 
         age_affect_multiArray_index: [0, 0, 0],
-        age_help_text: '',
+        age_help_text: '请调整相关数值⬆',
 
         age_edu_times: [2, 3, 4, 4, 4],
-        age_btn: [false, true, true, true, true],
-        age_text: ['看一下岁月是否使你进步了', '再看一下岁月是否使你进步了', '再再看一下岁月是否使你进步了', '再再再看一下岁月是否使你进步了', '再再再再看一下岁月是否使你进步了'],
+        age_btn: [false, true, true, true],
+        age_text: ['看一下岁月是否使你进步了', '再看一下岁月是否使你进步了', '再再看一下岁月是否使你进步了', '再再再看一下岁月是否使你进步了'],
 
         punish_point_done: true,
 
