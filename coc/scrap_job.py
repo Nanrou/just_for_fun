@@ -124,3 +124,17 @@ def detail(lst, start):
 
 if __name__ == '__main__':
     main()
+    with open('job.json', 'r', encoding='utf-8') as rf:
+        jj = json.load(rf)
+        i = 0
+        for j in jj:
+            for ik, iv in j.items():
+                if ik == '细分' and iv:
+                    for ij in j['子类']:
+                        for iik, iiv in ij.items():
+                            if iik == '本职技能':
+                                print(iiv)
+                else:
+                    if ik == '本职技能':
+                        print(iv)
+
