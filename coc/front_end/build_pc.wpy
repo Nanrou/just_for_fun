@@ -457,6 +457,11 @@
                 </block>
                 <button class="final_part_btn" @tap="handle_interesting_skill_next" data-index="{{index}}" type="primary" disabled="{{interesting_skill_btn_disable}}">{{interesting_skill_btn_text}}</button>
             </block>
+
+            <block wx:if="{{characteristic_part}}">
+
+            </block>
+
         </view>
     </view>
 </template>
@@ -1013,6 +1018,12 @@ export default class IndexPage extends wepy.page {
         this.interesting_skill[main_index]['name'] = skill
         this.interesting_skill[main_index]['point'] = this.skill_default_point[skill]
         this.interesting_skill_slider_disabled[main_index] = false
+
+        if (this.decide_duplicate_interesting_skill()) {
+            this.interesting_skill_btn_text = '请不要选重复的技能啦'
+        } else {
+            this.interesting_skill_btn_text = '决定好这样分配了吗？'
+        }
     }
 
     handle_interesting_skill_slider(e) {
@@ -1023,19 +1034,41 @@ export default class IndexPage extends wepy.page {
         this.interesting_skill[main_index]['point'] = point
         this.interesting_skill_btn_disable = true
 
-        if (this.interesting_skill_point < this.interesting_skill_used_point) {
+
+        if (this.decide_duplicate_interesting_skill()) {
+            this.interesting_skill_btn_text = '请不要选重复的技能啦'
+        } else if (this.interesting_skill_point < this.interesting_skill_used_point) {
             this.interesting_skill_btn_text = '不可以太贪心喔'
         } else if (this.interesting_skill_point > this.interesting_skill_used_point) {
             this.interesting_skill_btn_text = '还有没分配的技能点'
         } else {
-            this.interesting_skill_btn_text = '决定好这样分配了吗？'
-            this.interesting_skill_btn_disable = false
+                this.interesting_skill_btn_text = '决定好这样分配了吗？'
+                this.interesting_skill_btn_disable = false
         }
     }
 
-
-
-    // Todo 兴趣技能要做去重
+    // 兴趣技能要做去重
+    decide_duplicate_interesting_skill() {
+        for (let item of this.interesting_skill) {
+            if (item['name'] !== '-') {
+                for (let nest_item of this.interesting_skill) {
+                    if (item === nest_item) {
+                        continue
+                    }
+                    if (nest_item['name'] !== '-') {
+                        if (item['name'] === nest_item['name']) {
+                            return true
+                        }
+                    } else {
+                        break
+                    }
+                }
+            } else {
+                break
+            }
+        }
+        return false
+    }
 
     handle_interesting_skill_next() {
 
@@ -1260,6 +1293,22 @@ export default class IndexPage extends wepy.page {
         interesting_skill_single_part_visible: [true, false, false, false, false, false, false, false, false, false],
         interesting_skill_single_part_btn_visible: [true, true, true, true, true, true, true, true, true, false],
         interesting_skill_slider_disabled: [true, true, true, true, true, true, true, true, true, true],
+
+        // 背景部分
+        characteristic_part: true,
+
+        person_label: '',
+        person_faith: '',
+        person_lover: '',
+        person_impressive_place: '',
+        person_treasure: '',
+        person_feature: '',
+
+        person_loss: '',  // 损伤
+        person_bruise: '',  // 伤痕
+        person_fear: '',  // 恐惧
+        person_addictive_ingredient: '',  // 成瘾物
+
 
 
     };  // 页面所需数据均需在这里声明，可用于模板数据绑定
