@@ -52,7 +52,6 @@
         margin: 40rpx;
         background: #fff;
         text-align: center;
-
     }
 
     .line {
@@ -70,6 +69,13 @@
     .hint {
         font-size: 28rpx;
         color: lightblue;
+    }
+
+    .interesting_skill_single_btn {
+        width: 30%;
+        display: inline-block;
+        float: right;
+        margin: 0rpx 20rpx;
     }
 
 </style>
@@ -92,6 +98,10 @@
             <view style="display: inline-block; margin: 10rpx 20rpx">Job
                 <button @tap="job_in" style="display: inline;" >IN</button>
                 <button @tap="job_out" style="display: inline;" >OUT</button>
+            </view>
+            <view style="display: inline-block; margin: 10rpx 20rpx">Skill
+                <button @tap="skill_in" style="display: inline;" >IN</button>
+                <button @tap="skill_out" style="display: inline;" >OUT</button>
             </view>
         </view>
 
@@ -141,10 +151,11 @@
                                     <text>{{age}}岁</text>
                                 </view>
                                 <text>{{age_affect}}</text>
-                                <button class="final_part_btn" @tap="age_btn" wx:if="{{age_btn_hidden}}" class="final_part_btn">请谨慎确认，回不了头的了喔</button>
+                                <block  wx:if="{{age_btn_hidden}}">
+                                    <button class="final_part_btn" @tap="age_btn">请谨慎确认，回不了头的了喔</button>
+                                </block>
                             </view>
                         </block>
-
 
                         <block wx:if="{{age_affect_block}}">
                             <view class="line"></view>
@@ -182,8 +193,8 @@
                                 <view style="margin-top: 40rpx">
                                     <button class="final_part_btn" @tap="handle20next" type="primary" disabled="{{next_age}}">下一步</button>
                                 </view>
-
                             </view>
+
                             <view wx:elif="{{age < 40}}">
                                 <view class="dice100">
                                     {{dice100_decade}} {{dice100_single}}
@@ -194,6 +205,7 @@
                                     <button class="final_part_btn" @tap="handle40next" type="primary" disabled="{{next_age}}">下一步</button>
                                 </view>
                             </view>
+
                             <view wx:else>
                                 <view wx:if="{{age < 50}}">
                                     <picker mode="multiSelector" bindchange="handle_age_picker" data-num="5" value="{{age_affect_multiArray_index}}" range="{{age_affect_multiArray[0]}}">
@@ -386,7 +398,7 @@
                             </view>
                         </block>
                         <view>
-                            <slider bindchange="handle_skill_slider" data-index="{{index}}" data-default="{{skill_default_point[skill_final_profession[index]['name']]}}" min="{{skill_default_point[skill_final_profession[index]['name']]}}" max="90" disabled="{{skill_profession_slider_disabled[index]}}" show-value/>
+                            <slider bindchange="handle_skill_slider" data-index="{{index}}" data-default="{{skill_default_point[skill_final_profession[index]['name']]}}" min="{{skill_default_point[skill_final_profession[index]['name']]}}" max="90" value="{{skill_final_profession[index]['point']}}" disabled="{{skill_profession_slider_disabled[index]}}" show-value/>
                         </view>
                     </block>
 
@@ -401,7 +413,6 @@
                             </view>
                         </picker>
 
-
                         <block wx:if="{{skill_special_skill[skill_final_profession[index + professional_skill.length]['name']]}}">
                             <view class="picker20">
                                 <picker bindchange="handle_skill_picker" data-index="{{index + professional_skill.length}}" data-item="{{skill_final_profession[index + professional_skill.length]['name']}}" range="{{skill_special_skill[skill_final_profession[index + professional_skill.length]['name']]}}">
@@ -411,20 +422,41 @@
                                 </picker>
                             </view>
                         </block>
-
                         <view>
-                            <slider bindchange="handle_skill_slider" data-index="{{index + professional_skill.length}}" data-default="{{skill_default_point[skill_final_profession[index + professional_skill.length]['name']]}}" min="{{skill_default_point[skill_final_profession[index + professional_skill.length]['name']]}}" max="90" disabled="{{skill_profession_slider_disabled[index + professional_skill.length]}}" show-value/>
+                            <slider bindchange="handle_skill_slider" data-index="{{index + professional_skill.length}}" data-default="{{skill_default_point[skill_final_profession[index + professional_skill.length]['name']]}}" min="{{skill_default_point[skill_final_profession[index + professional_skill.length]['name']]}}" max="90" value="{{skill_final_profession[index + professional_skill.length]['point']}}" disabled="{{skill_profession_slider_disabled[index + professional_skill.length]}}" show-value/>
                         </view>
-
                     </block>
-
-
-
                     <button class="final_part_btn" @tap="handle_skill_next" type="primary" disabled="{{skill_btn_disable}}">{{skill_btn_text}}</button>
                 </view>
             </block>
 
-
+            <block wx:if="{{interesting_skill_part}}">
+                <view>目前剩余的兴趣技能点为：{{interesting_skill_point - interesting_skill_used_point}}</view>
+                <view>
+                <text class="hint">所有技能都有初始值，所以挑自己特别感兴趣的技能就好。</text>
+                </view>
+                <block wx:for="{{10}}">
+                    <block wx:if="{{interesting_skill_single_part_visible[index]}}">
+                        <view>
+                            <view class="line"></view>
+                            <view class="picker20">
+                                <picker bindchange="handle_interesting_skill_picker" data-index="{{index}}" range="{{normal_skill}}">
+                                    <view class="picker">
+                                        当前选择：{{interesting_skill[index]['name']}}
+                                    </view>
+                                </picker>
+                            </view>
+                            <view style="margin-bottom: 40rpx">
+                                <slider bindchange="handle_interesting_skill_slider" data-index="{{index}}" min="{{skill_default_point[interesting_skill[index]['name']]}}" max="90" value="{{interesting_skill[index]['point']}}" disabled="{{interesting_skill_slider_disabled[index]}}" show-value/>
+                            </view>
+                            <block wx:if="{{interesting_skill_single_part_btn_visible[index]}}">
+                                <button class="interesting_skill_single_btn" @tap="handle_interesting_single_part" data-index="{{index}}">+</button>
+                            </block>
+                        </view>
+                    </block>
+                </block>
+                <button class="final_part_btn" @tap="handle_interesting_skill_next" data-index="{{index}}" type="primary" disabled="{{interesting_skill_btn_disable}}">{{interesting_skill_btn_text}}</button>
+            </block>
         </view>
     </view>
 </template>
@@ -648,7 +680,7 @@ export default class IndexPage extends wepy.page {
                 this.next_age = false
             }
             this.$apply()
-        }, 1300)
+        }, 1800)
     }
 
     handle_age_next(e) {
@@ -708,7 +740,6 @@ export default class IndexPage extends wepy.page {
             this.$apply();
         }, 1000);
     }
-
 
     job_picker(e) {
         let index = e.detail.value
@@ -923,9 +954,90 @@ export default class IndexPage extends wepy.page {
         }
     }
 
-
     handle_skill_next(e) {
         console.log(this.skill_final_profession)
+
+        // 将技能值更新到default中去
+        for (let index in this.skill_final_profession) {
+            this.skill_default_point[this.skill_final_profession[index]['name']] = this.skill_final_profession[index]['point']
+        }
+
+        this.skill_out()
+
+        this.interesting_skill_point = this.property[6].sum * 2
+    }
+
+    skill_in() {
+        this.skill_part=true;
+        this.$apply();
+
+        let animation = wx.createAnimation({
+            duration: 800,
+            transformOrigin: "50% 50%"
+        })
+        animation.scale(1, 1).opacity(1).step()
+        this.skill_animation = animation.export()
+
+    }
+
+    skill_out(time) {
+        if (typeof time !== "number"){
+            time = 800
+        }
+        let animation = wx.createAnimation({
+            duration: time,
+            transformOrigin: "50% 20%"
+        })
+        animation.scale(0, 0).opacity(0).step()
+        this.skill_animation = animation.export()
+
+        setTimeout(() => {
+            this.skill_part = false;
+            this.$apply();
+        }, 1000);
+    }
+
+    // 兴趣技能点
+    handle_interesting_single_part(e) {
+        let main_index = parseInt(e.currentTarget.dataset.index)  // 每个部分的序号
+        if (main_index < 9) {
+            this.interesting_skill_single_part_btn_visible[main_index] = false  // 当前部分按钮隐藏
+            this.interesting_skill_single_part_visible[main_index + 1] = true  // 显示下个部分
+        }
+    }
+
+    handle_interesting_skill_picker(e) {
+        let main_index = parseInt(e.currentTarget.dataset.index)
+        let skill = this.normal_skill[e.detail.value]
+
+        this.interesting_skill[main_index]['name'] = skill
+        this.interesting_skill[main_index]['point'] = this.skill_default_point[skill]
+        this.interesting_skill_slider_disabled[main_index] = false
+    }
+
+    handle_interesting_skill_slider(e) {
+        let main_index = parseInt(e.currentTarget.dataset.index)
+        let point = parseInt(e.detail.value)
+
+        this.interesting_skill_used_point -= this.interesting_skill[main_index]['point'] - point  // 更新用掉的技能点
+        this.interesting_skill[main_index]['point'] = point
+        this.interesting_skill_btn_disable = true
+
+        if (this.interesting_skill_point < this.interesting_skill_used_point) {
+            this.interesting_skill_btn_text = '不可以太贪心喔'
+        } else if (this.interesting_skill_point > this.interesting_skill_used_point) {
+            this.interesting_skill_btn_text = '还有没分配的技能点'
+        } else {
+            this.interesting_skill_btn_text = '决定好这样分配了吗？'
+            this.interesting_skill_btn_disable = false
+        }
+    }
+
+
+
+    // Todo 兴趣技能要做去重
+
+    handle_interesting_skill_next() {
 
     }
 
@@ -933,8 +1045,11 @@ export default class IndexPage extends wepy.page {
         let age_data = require('../common/data/age_affect_data.js');
         let job_data = require('../common/data/job.js');
         let skill_data = require('../common/data/skill_data.js');
+
         this.age_data = age_data.age_affect_data;
+
         this.job_data = job_data.job;
+
         this.job_skill_mapper = skill_data.skill_data;
         this.skill_default_point = skill_data.skill_data_default_point;
         this.skill_special_skill = {
@@ -949,9 +1064,13 @@ export default class IndexPage extends wepy.page {
             "外语": skill_data.skill_data_other_language,
         };
 
+        this.normal_skill = skill_data.skill_data_normal;
+
         this.dice_out(0);
         this.age_out(0);
         this.job_out(0);
+        this.skill_out(0);
+
     }  // 在Page和Component共用的生命周期函数
 
     onShow () {}  // 只在Page中存在的页面生命周期函数
@@ -1126,6 +1245,22 @@ export default class IndexPage extends wepy.page {
             },
         ],  // 最终职业技能结果
         skill_profession_slider_disabled: [true, true, true, true, true, true, true, true], // 每个技能的可滑动
+
+        // 兴趣技能部分
+        normal_skill: {},
+        interesting_skill_part: true,
+        interesting_skill_animation: {},
+        interesting_skill_btn_disable: true,
+        interesting_skill_btn_text: '决定好这样分配了吗？',
+
+        interesting_skill_point: 0,  // 总技能点
+        interesting_skill_used_point: 0,  // 用掉的技能点
+
+        interesting_skill: [{'name': '-', 'point': 0}, {'name': '-', 'point': 0}, {'name': '-', 'point': 0}, {'name': '-', 'point': 0}, {'name': '-', 'point': 0}, {'name': '-', 'point': 0}, {'name': '-', 'point': 0}, {'name': '-', 'point': 0}, {'name': '-', 'point': 0}, {'name': '-', 'point': 0}],
+        interesting_skill_single_part_visible: [true, false, false, false, false, false, false, false, false, false],
+        interesting_skill_single_part_btn_visible: [true, true, true, true, true, true, true, true, true, false],
+        interesting_skill_slider_disabled: [true, true, true, true, true, true, true, true, true, true],
+
 
     };  // 页面所需数据均需在这里声明，可用于模板数据绑定
 
