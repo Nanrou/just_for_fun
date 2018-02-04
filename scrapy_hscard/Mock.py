@@ -1,3 +1,7 @@
+"""
+TODO 细分冒险模式
+"""
+
 from random import choice, random
 import pandas as pd
 
