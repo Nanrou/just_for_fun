@@ -78,6 +78,12 @@
         margin: 0rpx 20rpx;
     }
 
+    .input_block {
+        margin: 40rpx;
+        background: #fff;
+        border:1rpx solid;
+    }
+
 </style>
 
 
@@ -102,6 +108,10 @@
             <view style="display: inline-block; margin: 10rpx 20rpx">Skill
                 <button @tap="skill_in" style="display: inline;" >IN</button>
                 <button @tap="skill_out" style="display: inline;" >OUT</button>
+            </view>
+            <view style="display: inline-block; margin: 10rpx 20rpx">Characteristic_Skill
+                <button @tap="interesting_skill_in" style="display: inline;" >IN</button>
+                <button @tap="interesting_skill_out" style="display: inline;" >OUT</button>
             </view>
         </view>
 
@@ -431,35 +441,61 @@
             </block>
 
             <block wx:if="{{interesting_skill_part}}">
-                <view>目前剩余的兴趣技能点为：{{interesting_skill_point - interesting_skill_used_point}}</view>
-                <view>
-                <text class="hint">所有技能都有初始值，所以挑自己特别感兴趣的技能就好。</text>
-                </view>
-                <block wx:for="{{10}}">
-                    <block wx:if="{{interesting_skill_single_part_visible[index]}}">
-                        <view>
-                            <view class="line"></view>
-                            <view class="picker20">
-                                <picker bindchange="handle_interesting_skill_picker" data-index="{{index}}" range="{{normal_skill}}">
-                                    <view class="picker">
-                                        当前选择：{{interesting_skill[index]['name']}}
-                                    </view>
-                                </picker>
+                <view animation="{{interesting_skill_animation}}">
+                    <view>目前剩余的兴趣技能点为：{{interesting_skill_point - interesting_skill_used_point}}</view>
+                    <view>
+                        <text class="hint">所有技能都有初始值，所以挑自己特别感兴趣的技能就好。</text>
+                    </view>
+                    <block wx:for="{{10}}">
+                        <block wx:if="{{interesting_skill_single_part_visible[index]}}">
+                            <view>
+                                <view class="line"></view>
+                                <view class="picker20">
+                                    <picker bindchange="handle_interesting_skill_picker" data-index="{{index}}" range="{{normal_skill}}">
+                                        <view class="picker">
+                                            当前选择：{{interesting_skill[index]['name']}}
+                                        </view>
+                                    </picker>
+                                </view>
+                                <view style="margin-bottom: 40rpx">
+                                    <slider bindchange="handle_interesting_skill_slider" data-index="{{index}}" min="{{skill_default_point[interesting_skill[index]['name']]}}" max="90" value="{{interesting_skill[index]['point']}}" disabled="{{interesting_skill_slider_disabled[index]}}" show-value/>
+                                </view>
+                                <block wx:if="{{interesting_skill_single_part_btn_visible[index]}}">
+                                    <button class="interesting_skill_single_btn" @tap="handle_interesting_single_part" data-index="{{index}}">+</button>
+                                </block>
                             </view>
-                            <view style="margin-bottom: 40rpx">
-                                <slider bindchange="handle_interesting_skill_slider" data-index="{{index}}" min="{{skill_default_point[interesting_skill[index]['name']]}}" max="90" value="{{interesting_skill[index]['point']}}" disabled="{{interesting_skill_slider_disabled[index]}}" show-value/>
-                            </view>
-                            <block wx:if="{{interesting_skill_single_part_btn_visible[index]}}">
-                                <button class="interesting_skill_single_btn" @tap="handle_interesting_single_part" data-index="{{index}}">+</button>
-                            </block>
-                        </view>
+                        </block>
                     </block>
-                </block>
-                <button class="final_part_btn" @tap="handle_interesting_skill_next" data-index="{{index}}" type="primary" disabled="{{interesting_skill_btn_disable}}">{{interesting_skill_btn_text}}</button>
+                    <button class="final_part_btn" @tap="handle_interesting_skill_next" data-index="{{index}}" type="primary" disabled="{{interesting_skill_btn_disable}}">{{interesting_skill_btn_text}}</button>
+                </view>
             </block>
 
             <block wx:if="{{characteristic_part}}">
+                <view>
+                    <view>
+                        <view class="line"></view>
+                        <view>选点形容词形容你的调查员</view>
+                        <picker mode="multiSelector" bindchange="handler_characteristic_multi_picker" value="{{person_label}}" range="{{person_label_data}}">
+                            <view class="picker20">
+                                当前选择：{{person_label_data[0][person_label[0]]}}，{{person_label_data[1][person_label[1]]}}，{{person_label_data[2][person_label[2]]}}
+                            </view>
+                        </picker>
+                    </view>
 
+                    <block wx:for="{{6}}">
+                        <view class="line"></view>
+                        <view>{{person_multi_text[index]}}</view>
+                        <picker mode="selector" bindchange="handler_characteristic_picker" data-index="{{index}}" range="{{person_multi_range[index]}}">
+                            <view class="picker20">
+                                当前选择：{{person_multi_property[index]}}
+                            </view>
+                        </picker>
+                        <view class="input_block">
+                            <input bindconfirm="handler_characteristic_input" data-index="{{index}}" maxlength="32" placeholder="具体方向或者其他（选填）" type="text" />
+                        </view>
+                    </block>
+                    <button class="final_part_btn" @tap="handle_person_next" type="primary" disabled="{{person_btn_disable}}">{{person_btn_text}}</button>
+                </view>
             </block>
 
         </view>
@@ -982,7 +1018,6 @@ export default class IndexPage extends wepy.page {
         })
         animation.scale(1, 1).opacity(1).step()
         this.skill_animation = animation.export()
-
     }
 
     skill_out(time) {
@@ -1021,6 +1056,7 @@ export default class IndexPage extends wepy.page {
 
         if (this.decide_duplicate_interesting_skill()) {
             this.interesting_skill_btn_text = '请不要选重复的技能啦'
+            this.interesting_skill_btn_disable = true
         } else {
             this.interesting_skill_btn_text = '决定好这样分配了吗？'
         }
@@ -1047,7 +1083,7 @@ export default class IndexPage extends wepy.page {
         }
     }
 
-    // 兴趣技能要做去重
+    // 兴趣技能做去重
     decide_duplicate_interesting_skill() {
         for (let item of this.interesting_skill) {
             if (item['name'] !== '-') {
@@ -1071,13 +1107,57 @@ export default class IndexPage extends wepy.page {
     }
 
     handle_interesting_skill_next() {
+        this.interesting_skill_out()
+    }
 
+    interesting_skill_in() {
+        this.interesting_skill_part=true;
+        this.$apply();
+
+        let animation = wx.createAnimation({
+            duration: 800,
+            transformOrigin: "50% 50%"
+        })
+        animation.scale(1, 1).opacity(1).step()
+        this.interesting_skill_animation = animation.export()
+    }
+
+    interesting_skill_out(time) {
+        if (typeof time !== "number"){
+            time = 800
+        }
+        let animation = wx.createAnimation({
+            duration: time,
+            transformOrigin: "50% 20%"
+        })
+        animation.scale(0, 0).opacity(0).step()
+        this.interesting_skill_animation = animation.export()
+
+        setTimeout(() => {
+            this.interesting_skill_part = false;
+            this.$apply();
+        }, 1000);
+    }
+
+    handler_characteristic_multi_picker(e) {
+        this.person_label = e.detail.value
+    }
+
+    handler_characteristic_picker(e) {
+        let main_index = parseInt(e.currentTarget.dataset.index)
+        this.person_multi_property[main_index] = this.person_multi_range[main_index][e.detail.value]
+    }
+
+    handler_characteristic_input(e) {
+        let main_index = parseInt(e.currentTarget.dataset.index)
+        this.person_multi_property[main_index] = e.detail.value
     }
 
     onLoad () {
         let age_data = require('../common/data/age_affect_data.js');
         let job_data = require('../common/data/job.js');
         let skill_data = require('../common/data/skill_data.js');
+        let feature_data = require('../common/data/feature_data.js')
 
         this.age_data = age_data.age_affect_data;
 
@@ -1099,11 +1179,29 @@ export default class IndexPage extends wepy.page {
 
         this.normal_skill = skill_data.skill_data_normal;
 
+
+       this.person_label_data = [feature_data.feature_label_data, feature_data.feature_label_data, feature_data.feature_label_data];
+      // this.person_faith_data = feature_data.feature_faith_data;
+      // this.person_lover_data = feature_data.feature_lover_data;
+      // this.person_lover_reason_data = feature_data.feature_lover_reason_data;
+      // this.person_impressive_place_data = feature_data.feature_impressive_place_data;
+      // this.person_treasure_data = feature_data.feature_treasure_data;
+      // this.person_feature_data = feature_data.feature_feature_data;
+
+       this.person_multi_range = [
+            feature_data.feature_faith_data,
+            feature_data.feature_lover_data,
+            feature_data.feature_lover_reason_data,
+            feature_data.feature_impressive_place_data,
+            feature_data.feature_treasure_data,
+            feature_data.feature_feature_data,
+       ];
+
         this.dice_out(0);
         this.age_out(0);
         this.job_out(0);
         this.skill_out(0);
-
+        this.interesting_skill_out(0);
     }  // 在Page和Component共用的生命周期函数
 
     onShow () {}  // 只在Page中存在的页面生命周期函数
@@ -1297,12 +1395,28 @@ export default class IndexPage extends wepy.page {
         // 背景部分
         characteristic_part: true,
 
-        person_label: '',
-        person_faith: '',
-        person_lover: '',
-        person_impressive_place: '',
-        person_treasure: '',
-        person_feature: '',
+        person_btn_disable: true,
+        person_btn_text: '确定好做一个这样的人了吗',
+
+        person_label_data: '',
+        person_faith_data: '',
+        person_lover_data: '',
+        person_lover_reason_data: '',
+        person_impressive_place_data: '',
+        person_treasure_data: '',
+        person_feature_data: '',
+
+        person_multi_text: ['为你调查员选择信仰方向', '为你调查员选择重要的人', '为你调查员选择羁绊的原因', '为你调查员选择意义非凡的地方', '为你调查员选择珍贵之物', '为你调查员贴个标签'],
+        person_multi_range: [],
+        person_multi_property: ['请选择', '请选择', '请选择', '请选择', '请选择', '请选择'],
+
+        person_label: [0, 1, 2],
+        person_faith: '请选择',
+        person_lover: '请选择',
+        person_lover_reason: '请选择',
+        person_impressive_place: '请选择',
+        person_treasure: '请选择',
+        person_feature: '请选择',
 
         person_loss: '',  // 损伤
         person_bruise: '',  // 伤痕
@@ -1322,7 +1436,22 @@ export default class IndexPage extends wepy.page {
     };  // 声明计算属性（详见后文介绍）
 
     watch = {
+        person_multi_property (new_value, old_value) {
+            let flag = true
+            for (let item of new_value) {
+                if (item === '请选择') {
+                    this.person_btn_text = '丰满的调查员会更有趣'
+                    flag = false
+                    break
+                }
+            }
 
+            if (flag) {
+                this.person_btn_text = '确定好做一个这样的人了吗'
+                this.person_btn_disable = false
+            }
+            this.$apply()
+        }
     };  // 声明数据watcher（详见后文介绍）
 
     methods = {};  // 声明页面wxml中标签的事件处理函数。注意，此处只用于声明页面wxml中标签的bind、catch事件，自定义方法需以自定义方法的方式声明
