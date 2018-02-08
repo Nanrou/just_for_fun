@@ -380,11 +380,10 @@
             <block wx:if="{{job_part}}">
                 <view class="line"></view>
                 <view animation="{{job_animation}}">
-                    <view class="section__title">职业选择器</view>
+                    <view class="section__title">职业选择</view>
                     <picker bindchange="job_picker" value="{{index}}" range="{{job_data}}" range-key="职业">
-                        确定职业：
                         <view class="picker20">
-                            {{job_title}}
+                            当前职业：{{job_title}}
                         </view>
                     </picker>
                     <block wx:if="{{job_detail}}">
@@ -487,7 +486,7 @@
                     <view>
                         <text class="hint">所有技能都有初始值，所以挑自己特别感兴趣的技能就好。</text>
                     </view>
-                    <block wx:for="{{10}}">
+                    <block wx:for="{{10}}" wx:key="*this">
                         <block wx:if="{{interesting_skill_single_part_visible[index]}}">
                             <view>
                                 <view class="line"></view>
@@ -523,7 +522,7 @@
                         </picker>
                     </view>
 
-                    <block wx:for="{{6}}">
+                    <block wx:for="{{6}}" wx:key="*this">
                         <view class="line"></view>
                         <view>{{person_multi_text[index]}}</view>
                         <picker mode="selector" bindchange="handler_characteristic_picker" data-index="{{index}}" range="{{person_multi_range[index]}}">
@@ -815,14 +814,14 @@ export default class IndexPage extends wepy.page {
 
     control_dice100() {
         new MyInterval({
-            loops: Math.floor(Math.random()*10 + 1) + 10,
+            loops: Math.floor(Math.random()*10 + 1) + 3,
             onUpdate: () => {
                 this.dice100_decade = Math.floor(Math.random()*10)
                 this.$apply()
             }
         })
         new MyInterval({
-            loops: Math.floor(Math.random()*10 + 1) + 10,
+            loops: Math.floor(Math.random()*10 + 1) + 5,
             onUpdate: () => {
                 this.dice100_single = Math.floor(Math.random()*10)
                 this.$apply()
@@ -978,7 +977,6 @@ export default class IndexPage extends wepy.page {
                 sum += this.calculate_skill_point(pro, time)
 
                 if (part2.indexOf('或')) {
-                    console.log(part2)
                     let tmp2 = part2.split('×')
                     let part3 = tmp2[0]
                     time = parseInt(tmp2[1])
@@ -1009,20 +1007,31 @@ export default class IndexPage extends wepy.page {
             this.skill_default_point['母语'] = this.property[7].sum
 
             // 本职技能
-            let i=0
             for (let item of this.job_skill_mapper[this.job_btn_text]) {
                 if (typeof item === 'string') {
                     this.professional_skill.push(item)
-                    this.skill_final_profession[i]['name'] = item
-                    if (! this.skill_special_skill.hasOwnProperty(item)) {
-                        this.skill_final_profession[i]['point'] = this.skill_default_point[item]
-                        this.skill_profession_slider_disabled[i] = false
-                    }
+                    // this.skill_final_profession[i]['name'] = item
+                    // if (! this.skill_special_skill.hasOwnProperty(item)) {
+                    //     this.skill_final_profession[i]['point'] = this.skill_default_point[item]
+                    //     this.skill_profession_slider_disabled[i] = false
+                    // }
                 } else {
                     this.option_professional_skill.push(item)
                 }
-                i += 1
             }
+
+            for (let i in this.professional_skill) {
+                let item = this.professional_skill[i]
+                if (item === '其他') {
+                    continue
+                }
+                if (! this.skill_special_skill.hasOwnProperty(item)) {
+                    this.skill_final_profession[i]['name'] = item
+                    this.skill_final_profession[i]['point'] = this.skill_default_point[item]
+                    this.skill_profession_slider_disabled[i] = false
+                }
+            }
+
             this.$apply()
         }
     }
@@ -1089,7 +1098,6 @@ export default class IndexPage extends wepy.page {
     }
 
     handle_skill_next(e) {
-        // console.log(this.skill_final_profession)
 
         // 将技能值更新到default中去
         for (let index in this.skill_final_profession) {
@@ -1278,9 +1286,47 @@ export default class IndexPage extends wepy.page {
     }
 
     handle_person_next() {
-        wx.redirectTo({
-            url: 'index'
-        });
+       // wx.redirectTo({
+       //     url: 'index'
+       // });
+        this.store_data()
+    }
+
+    store_data() {
+        let data = {}
+        data['name'] = this.name
+        data['sex'] = this.sex
+
+        data['property'] = {}
+        for (let i in this.property) {
+            data['property'][this.property[i]._type] = this.property[i].sum
+        }
+
+        data['age'] = this.age
+
+        data['job'] = this.job_btn_text
+
+        data['credit'] = this.skill_credit
+        data['skill'] = {}
+        for (let item of this.skill_final_profession){
+            data['skill'][item.name] = item.point
+        }
+        for (let item of this.interesting_skill) {
+            if (item.name !== '-') {
+                data['skill'][item.name] = item.point
+            }
+        }
+
+        data['person_label'] = []
+        for (let index of this.person_label) {
+            data['person_label'].push(this.person_label_data[0][index])
+        }
+        data['person_multi_property'] = this.person_multi_property
+
+        wx.setStorage({
+            key:"build_pc_data",
+            data: data,
+        })
     }
 
     onLoad () {
@@ -1347,6 +1393,7 @@ export default class IndexPage extends wepy.page {
         name: '',
         sex: '',
         sex_range: ['男', '女', '双性人', '变性人(男变女)', '变性人(女变男)'],
+        tt: [],
 
         // 属性阶段
         dice_part: true,
@@ -1574,7 +1621,6 @@ export default class IndexPage extends wepy.page {
     mixins = [];  // 声明页面所引用的Mixin实例
 
     computed = {
-
     };  // 声明计算属性（详见后文介绍）
 
     watch = {
