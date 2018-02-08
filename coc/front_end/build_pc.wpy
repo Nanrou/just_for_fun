@@ -5,6 +5,14 @@
         background: #fbf9fe;
     }
 
+    .start_part {
+        margin: 18rpx 0;
+        display: inline-block;
+        width: 100%;
+        height: 600rpx;
+        text-align: center;
+    }
+
     .xiongji {
         width: 210rpx;
         height: 210rpx;
@@ -90,9 +98,8 @@
 <template>
     <view class="container">
         <view class="header">
-            <!--
             <view><image src="../common/images/xiongji.png" mode="aspectFit" class="xiongji"></image></view>
-            -->
+            <!--
             <view style="display: inline-block; margin: 10rpx 20rpx" >Dice
                 <button @tap="dice_in" style="display: inline;" >IN</button>
                 <button @tap="dice_out" style="display: inline;" >OUT</button>
@@ -113,9 +120,20 @@
                 <button @tap="interesting_skill_in" style="display: inline;" >IN</button>
                 <button @tap="interesting_skill_out" style="display: inline;" >OUT</button>
             </view>
+            -->
         </view>
 
         <view class="content">
+            <block wx:if="{{start_part}}">
+                <view animation="{{start_animation}}">
+                    <view class="start_part">
+                        <view>准备好造人了吗？</view>
+                        <view style="display: inline-block;margin-top: 20%">
+                            <button class="final_part_btn" @tap="handler_start_next" type="primary">Go</button>
+                        </view>
+                    </view>
+                </view>
+            </block>
 
             <block wx:if="{{dice_part}}" >
                 <view animation="{{dice_animation}}">
@@ -145,6 +163,7 @@
                         </ul>
                     </view>
 
+                    <button class="final_part_btn" @tap="handle_dice_next" type="primary" disabled="{{dice_btn_disable}}">{{dice_btn_text}}</button>
                 </view>
             </block>
 
@@ -407,6 +426,15 @@
                                 </picker>
                             </view>
                         </block>
+                        <block wx:elif="{{item == '其他'}}">
+                            <view class="picker20">
+                                <picker bindchange="handle_skill_normal_picker" data-index="{{index}}" range="{{normal_skill}}">
+                                    <view class="picker">
+                                        当前选择：{{skill_final_profession[index]['name']}}
+                                    </view>
+                                </picker>
+                            </view>
+                        </block>
                         <view>
                             <slider bindchange="handle_skill_slider" data-index="{{index}}" data-default="{{skill_default_point[skill_final_profession[index]['name']]}}" min="{{skill_default_point[skill_final_profession[index]['name']]}}" max="90" value="{{skill_final_profession[index]['point']}}" disabled="{{skill_profession_slider_disabled[index]}}" show-value/>
                         </view>
@@ -512,6 +540,21 @@ export default class IndexPage extends wepy.page {
 
     customFunction ()　{}//自定义方法
 
+    handler_start_next(e) {
+        let animation = wx.createAnimation({
+            duration: 800,
+            transformOrigin: "50% 20%"
+        })
+        animation.scale(0, 0).opacity(0).step()
+        this.start_animation = animation.export()
+
+        setTimeout(() => {
+            this.start_part = false;
+            this.dice_in();
+            this.$apply();
+        }, 1000);
+    }
+
     // 控制骰子动作的启停
     control_dice(e) {
         this.dice_action = !this.dice_action;
@@ -542,7 +585,7 @@ export default class IndexPage extends wepy.page {
                     this.init_dice = tmp_dice;
                     this.property[i].dice_lock = true;
                     this.dice_count += 1;
-                          }
+                }
                   continue
             }
 
@@ -552,8 +595,13 @@ export default class IndexPage extends wepy.page {
         }
 
         if (this.dice_count === this.property.length) {
-            this.dice_out()
+            this.dice_btn_disable = false
         }
+    }
+
+    handle_dice_next() {
+        this.dice_out()
+        this.age_in()
     }
 
     dice_in() {
@@ -562,7 +610,7 @@ export default class IndexPage extends wepy.page {
         this.$apply();
 
         let animation = wx.createAnimation({
-            duration: 800,
+            duration: 300,
             transformOrigin: "50% 50%"
         })
         animation.scale(1, 1).opacity(1).step()
@@ -652,6 +700,7 @@ export default class IndexPage extends wepy.page {
         this.property[0].sum -= this.tmp_disable_str
         this.property[2].sum -= this.tmp_disable_siz
         this.age_out()
+        this.job_in()
     }
 
     handle40btn() {
@@ -673,6 +722,7 @@ export default class IndexPage extends wepy.page {
 
     handle40next() {
         this.age_out()
+        this.job_in()
     }
 
     // 惩罚点的逻辑
@@ -731,6 +781,7 @@ export default class IndexPage extends wepy.page {
         this.property[1].sum -= this.tmp_disable_con
         this.property[3].sum -= this.tmp_disable_dex
         this.age_out()
+        this.job_in()
     }
 
     control_dice100() {
@@ -823,6 +874,7 @@ export default class IndexPage extends wepy.page {
 
     handle_job_next(e) {
         this.job_out()
+        this.skill_in()
     }
 
     job_in() {
@@ -923,7 +975,11 @@ export default class IndexPage extends wepy.page {
 
             this.skill_point = sum
 
-        // 本职技能
+            // 更新 闪避 和 母语 的初始值
+            this.skill_default_point['闪避'] = Math.floor(this.property[3].sum / 2)
+            this.skill_default_point['母语'] = this.property[7].sum
+
+            // 本职技能
             let i=0
             for (let item of this.job_skill_mapper[this.job_btn_text]) {
                 if (typeof item === 'string') {
@@ -958,7 +1014,15 @@ export default class IndexPage extends wepy.page {
         this.skill_final_profession[main_index]['name'] = skill
         this.skill_final_profession[main_index]['point'] = this.skill_default_point[skill]
         this.skill_profession_slider_disabled[main_index] = false
+    }
 
+    handle_skill_normal_picker(e) {
+        let main_index = parseInt(e.currentTarget.dataset.index)  // 8次循环的序号，主序号
+        let skill = this.normal_skill[e.detail.value]
+
+        this.skill_final_profession[main_index]['name'] = skill
+        this.skill_final_profession[main_index]['point'] = this.skill_default_point[skill]
+        this.skill_profession_slider_disabled[main_index] = false
     }
 
     handle_skill_option_picker(e) {
@@ -1006,6 +1070,7 @@ export default class IndexPage extends wepy.page {
         this.skill_out()
 
         this.interesting_skill_point = this.property[6].sum * 2
+        this.interesting_skill_in()
     }
 
     skill_in() {
@@ -1108,6 +1173,7 @@ export default class IndexPage extends wepy.page {
 
     handle_interesting_skill_next() {
         this.interesting_skill_out()
+        this.characteristic_in()
     }
 
     interesting_skill_in() {
@@ -1151,6 +1217,41 @@ export default class IndexPage extends wepy.page {
     handler_characteristic_input(e) {
         let main_index = parseInt(e.currentTarget.dataset.index)
         this.person_multi_property[main_index] = e.detail.value
+    }
+
+    characteristic_in() {
+        this.characteristic_part=true;
+        this.$apply();
+
+        let animation = wx.createAnimation({
+            duration: 800,
+            transformOrigin: "50% 50%"
+        })
+        animation.scale(1, 1).opacity(1).step()
+        this.characteristic_animation = animation.export()
+    }
+
+    characteristic_out(time) {
+        if (typeof time !== "number"){
+            time = 800
+        }
+        let animation = wx.createAnimation({
+            duration: time,
+            transformOrigin: "50% 20%"
+        })
+        animation.scale(0, 0).opacity(0).step()
+        this.characteristic_animation = animation.export()
+
+        setTimeout(() => {
+            this.characteristic_part = false;
+            this.$apply();
+        }, 1000);
+    }
+
+    handle_person_next() {
+        wx.redirectTo({
+            url: 'index'
+        });
     }
 
     onLoad () {
@@ -1202,6 +1303,7 @@ export default class IndexPage extends wepy.page {
         this.job_out(0);
         this.skill_out(0);
         this.interesting_skill_out(0);
+        this.characteristic_out(0);
     }  // 在Page和Component共用的生命周期函数
 
     onShow () {}  // 只在Page中存在的页面生命周期函数
@@ -1209,12 +1311,17 @@ export default class IndexPage extends wepy.page {
     config = {};  // 只在Page实例中存在的配置数据，对应于原生的page.json文件
 
     data = {
+        start_part: true,
+        start_animation: {},
+
         // 属性阶段
         dice_part: true,
         dice_animation: {},
         init_dice: [1, 1, 1],
         dice_action: false,
         dice_count: 0,
+        dice_btn_disable: true,
+        dice_btn_text: '下一步',
 
         property: [
             { name: '力量(3D6):', sum: 0, _type: 'str', status: 'Roll', dice_lock: false },
@@ -1394,6 +1501,7 @@ export default class IndexPage extends wepy.page {
 
         // 背景部分
         characteristic_part: true,
+        characteristic_animation: {},
 
         person_btn_disable: true,
         person_btn_text: '确定好做一个这样的人了吗',
@@ -1411,17 +1519,17 @@ export default class IndexPage extends wepy.page {
         person_multi_property: ['请选择', '请选择', '请选择', '请选择', '请选择', '请选择'],
 
         person_label: [0, 1, 2],
-        person_faith: '请选择',
-        person_lover: '请选择',
-        person_lover_reason: '请选择',
-        person_impressive_place: '请选择',
-        person_treasure: '请选择',
-        person_feature: '请选择',
+       // person_faith: '请选择',
+       // person_lover: '请选择',
+       // person_lover_reason: '请选择',
+       // person_impressive_place: '请选择',
+       // person_treasure: '请选择',
+       // person_feature: '请选择',
 
-        person_loss: '',  // 损伤
-        person_bruise: '',  // 伤痕
-        person_fear: '',  // 恐惧
-        person_addictive_ingredient: '',  // 成瘾物
+       // person_loss: '',  // 损伤
+       // person_bruise: '',  // 伤痕
+       // person_fear: '',  // 恐惧
+       // person_addictive_ingredient: '',  // 成瘾物
 
 
 
