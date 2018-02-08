@@ -128,8 +128,21 @@
                 <view animation="{{start_animation}}">
                     <view class="start_part">
                         <view>准备好造人了吗？</view>
+                        <view>
+                            <view class="input_block">
+                                <input bindconfirm="handler_name_input" maxlength="16" placeholder="叫什么名字好呢" type="text"/>
+                            </view>
+                        </view>
+                        <view>
+                            <view>选择性别</view>
+                            <view class="picker20">
+                                <picker bindchange="handle_sex_picker" range="{{sex_range}}">
+                                    当前性别：{{sex}}
+                                </picker>
+                            </view>
+                        </view>
                         <view style="display: inline-block;margin-top: 20%">
-                            <button class="final_part_btn" @tap="handler_start_next" type="primary">Go</button>
+                            <button class="final_part_btn" @tap="handler_start_next" type="primary" disabled="{{start_btn_disable}}">{{start_btn_text}}</button>
                         </view>
                     </view>
                 </view>
@@ -553,6 +566,22 @@ export default class IndexPage extends wepy.page {
             this.dice_in();
             this.$apply();
         }, 1000);
+    }
+
+    handler_name_input(e) {
+        this.name = e.detail.value
+        if (this.sex !== '') {
+            this.start_btn_disable = false
+            this.start_btn_text = 'Go'
+        }
+    }
+
+    handle_sex_picker(e) {
+        this.sex = this.sex_range[e.detail.value]
+        if (this.name !== '') {
+            this.start_btn_disable = false
+            this.start_btn_text = 'Go'
+        }
     }
 
     // 控制骰子动作的启停
@@ -1060,7 +1089,7 @@ export default class IndexPage extends wepy.page {
     }
 
     handle_skill_next(e) {
-        console.log(this.skill_final_profession)
+        // console.log(this.skill_final_profession)
 
         // 将技能值更新到default中去
         for (let index in this.skill_final_profession) {
@@ -1313,6 +1342,11 @@ export default class IndexPage extends wepy.page {
     data = {
         start_part: true,
         start_animation: {},
+        start_btn_disable: true,
+        start_btn_text: '先填一下基本资料',
+        name: '',
+        sex: '',
+        sex_range: ['男', '女', '双性人', '变性人(男变女)', '变性人(女变男)'],
 
         // 属性阶段
         dice_part: true,
