@@ -1,8 +1,8 @@
-package headFirst.State;
+package headFirst.Proxy.Gumball;
 
-import java.io.*;
+import java.io.Serializable;
 
-public interface State {
+public interface State extends Serializable {
 
     public void insertQuarter();   // 塞钱这个动作
 
