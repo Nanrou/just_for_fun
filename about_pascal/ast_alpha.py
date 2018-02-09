@@ -1,3 +1,6 @@
+from collections import OrderedDict
+
+
 INTEGER = 'INTEGER'
 REAL = 'REAL'
 INTEGER_CONST = 'INTEGER_CONST'
@@ -168,6 +171,58 @@ class Lexer:
         return Token(EOF, None)
 
 
+class Symbol:
+    def __init__(self, name, type_=None):
+        self.name = name
+        self.type = type_
+
+
+class BuiltinTypeSymbol(Symbol):
+    def __init__(self, name):
+        super().__init__(name)
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class VarSymbol(Symbol):
+    def __init__(self, name, type_):
+        super().__init__(name, type_)
+
+    def __str__(self):
+        return '<{name}: {type_}>'.format(name=self.name, type_=self.type)
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class SymbolTable:
+    def __init__(self):
+        self._symbols = OrderedDict()
+        self._init_builtins()
+
+    def _init_builtins(self):
+        self.define(BuiltinTypeSymbol(INTEGER))
+        self.define(BuiltinTypeSymbol(REAL))
+
+    def __str__(self):
+        return 'Symbols: {symbols}'.format(symbols=[value for value in self._symbols.values()])
+
+    def __repr__(self):
+        return self.__str__()
+
+    def define(self, symbol):
+        print('Define: {}'.format(symbol))
+        self._symbols[symbol.name] = symbol
+
+    def lookup(self, name):
+        print('Lookup: {}'.format(name))
+        return self._symbols.get(name)
+
+
 class AST:
     pass
 
@@ -249,7 +304,7 @@ class Parser:
         if self.current_token.type == token_type:
             self.current_token = self.lexer.get_next_token()  # 这里就往前走了，就像lexer中的advance
         else:
-            self.error(self.current_token)
+            self.error('{} with {}'.format(self.current_token, token_type))
 
     def factor(self):  # unary_op factor | num | ( expr ) | variable
         _token = self.current_token
@@ -409,6 +464,56 @@ class NodeVisitor:
         return visitor(node)
 
 
+class SymbolTableBuilder(NodeVisitor):
+    def __init__(self):
+        self.symbol_table = SymbolTable()
+
+    def visit_program(self, node):
+        self.visit(node.block)
+
+    def visit_block(self, node):
+        for declaration in node.declarations:  # 声明部分，确定变量的类型
+            self.visit(declaration)
+        self.visit(node.compound_statement)  # 逻辑部分，确定变量已经声明
+
+    def visit_compound(self, node):
+        for child in node.children:
+            self.visit(child)
+
+    def visit_vardecl(self, node):  # 生成变量和类型的对应关系，储存在symbol表中
+        type_name = node.type_node.value
+        type_symbol = self.symbol_table.lookup(type_name)  # 拿到标准类型
+        var_name = node.var_node.value
+        var_symbol = VarSymbol(var_name, type_symbol)
+        self.symbol_table.define(var_symbol)
+
+    def visit_binop(self, node):
+        self.visit(node.left)
+        self.visit(node.right)
+
+    def visit_unaryop(self, node):
+        self.visit(node.expr)
+
+    def visit_assign(self, node):  # x := expr;
+        var_name = node.left.value
+        var_symbol = self.symbol_table.lookup(var_name)
+        if var_symbol is None:
+            raise NameError(repr(var_name))
+        self.visit(node.right)
+
+    def visit_var(self, node):  # 确保变量已经声明了
+        var_name = node.value
+        var_symbol = self.symbol_table.lookup(var_name)
+        if var_symbol is None:
+            raise NameError(repr(var_name))
+
+    def visit_num(self, node):
+        pass
+
+    def visit_noop(self, node):
+        pass
+
+
 class Interpreter(NodeVisitor):  # 这里才是真正操作执行
 
     def __init__(self, parser):
@@ -499,9 +604,31 @@ BEGIN {Part10}
    { writeln('y = ', y); }
 END. {Part10}
 '''
-    ll = Lexer(tt)
+    dd = """\
+PROGRAM Part11;
+VAR
+   number : INTEGER;
+   a, b   : INTEGER;
+   y      : REAL;
+
+BEGIN {Part11}
+   number := 2;
+   a := number ;
+   b := 10 * a + 10 * number DIV 4;
+   y := 20 / 7 + 3.14
+END.  {Part11}
+
+"""
+
+    # ll = Lexer(tt)
+    ll = Lexer(dd)
+    pp = Parser(ll)
+    sy = SymbolTableBuilder()
+    sy.visit(pp.parser())
+    print(sy.symbol_table)
+
+    ll = Lexer(dd)
     pp = Parser(ll)
     ii = Interpreter(pp)
     ii.interpreter()
     print(ii.GLOBAL_SCOPE)
-    # print(eval(ss))
