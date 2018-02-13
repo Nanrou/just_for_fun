@@ -40,7 +40,7 @@
             </el-table-column>
           </el-table>
           <transition name="fade">
-            <div style="padding-top: 10px" v-if="!diceNextDisabled">
+            <div style="padding-top: 10px" v-if="diceFinish">
               <el-button round type="success" @click="partOfDice=!partOfDice">下一步</el-button>
             </div>
           </transition>
@@ -173,7 +173,48 @@
       </transition>
 
       <transition name="slide-fade" v-on:after-leave="stepMove">
-        <el-card v-if="partOfJob">cccccc</el-card>
+        <el-card v-if="partOfJob" class="box-card">
+          <div>
+            <h1>确定职业</h1>
+            <div>
+              <el-select v-model="job" placeholder="请选择" value-key="职业">
+                <el-option v-for="item in jobDetailData" :key="item['职业']" :label="item['职业']" :value="item">
+                </el-option>
+              </el-select>
+            </div>
+            <transition name="fade">
+              <div v-if="job['细分']" style="margin-top: 8px">
+                <hr class="dashed"/>
+                <el-select v-model="jobItem" placeholder="请选择细分职业" value-key="职业">
+                  <el-option v-for="item in job['子类']" :key="item['职业']" :label="item['职业']" :value="item">
+                  </el-option>
+                </el-select>
+              </div>
+            </transition>
+            <transition name="fade">
+              <div v-if="Boolean(job)" style="text-align: left">
+                <p>职业描述：<span v-html="job['描述']"></span></p>
+                <transition name="fade">
+                  <div v-if="!job['细分']">
+                    <p>信用范围：{{ job['信用范围'] }}</p>
+                    <p>技能点数：{{ job['本职技能点数'] }}</p>
+                    <p>本职技能：{{ job['本职技能'] }}</p>
+                  </div>
+                  <div v-else-if="Boolean(jobItem)">
+                    <p>信用范围：{{ jobItem['信用范围'] }}</p>
+                    <p>技能点数：{{ jobItem['本职技能点数'] }}</p>
+                    <p>本职技能：{{ jobItem['本职技能'] }}</p>
+                  </div>
+                </transition>
+              </div>
+            </transition>
+            <transition name="fade">
+              <div v-if="jobFinish">
+                <el-button round type="success" @click="partOfJob=!partOfJob">确定要当一个{{ jobTitle }}了吗</el-button>
+              </div>
+            </transition>
+          </div>
+        </el-card>
       </transition>
 
       <transition name="slide-fade" v-on:after-leave="stepMove">
@@ -218,7 +259,6 @@ export default {
       age: 32,
       ageDetailData: require('../assets/data/age_data'),
       ageConfirm: false,
-      ageAdjust: false,
       age20Punish: 0,
       age20ReRoll: false,
       age20ReRollAction: true,
@@ -237,6 +277,9 @@ export default {
       ageTmpDEX: 0,
 
       partOfJob: false,
+      job: '',
+      jobItem: '',
+      jobDetailData: require('../assets/data/job_data').data,
 
       partOfSkill: false
     }
@@ -380,19 +423,29 @@ export default {
     },
 
     btnHandleAgeNext () {
-
+      if (this.age < 20) {
+        this.property[0].sum -= this.age20Punish
+        this.property[1].sum -= (5 - this.age20Punish)
+        this.property[7].sum -= 5
+      } else {
+        this.property[0].sum -= this.ageTmpSTR
+        this.property[1].sum -= this.ageTmpCON
+        this.property[3].sum -= this.ageTmpDEX
+        this.property[4].sum -= this.agePunishApp
+      }
+      this.partOfAge = false
     }
 
   },
 
   computed: {
-    diceNextDisabled () {
+    diceFinish () {
       for (let item of this.property) {
         if (!item.dice_lock) {
-          return true
+          return false
         }
       }
-      return false
+      return true
     },
 
     ageText () {
@@ -438,6 +491,25 @@ export default {
         }
       }
       return false
+    },
+
+    jobTitle () {
+      if (!this.job['细分']) {
+        return this.job['职业']
+      } else if (this.jobItem) {
+        return this.jobItem['职业']
+      }
+    },
+
+    jobFinish () {
+      if (this.job) {
+        if (!this.job['细分']) {
+          return true
+        } else if (this.jobItem) {
+          return true
+        }
+      }
+      return false
     }
   },
 
@@ -459,6 +531,10 @@ export default {
         .start()
 
       animate()
+    },
+
+    job: function (newValue, oldValue) {
+      this.jobItem = null
     }
 
   }
@@ -491,8 +567,9 @@ export default {
 
   .dashed {
     border: 0;
-    border-bottom: 1px dashed #ccc;
-    background: #959595;
+    height: 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   }
 
   .slide-fade-enter-active {
