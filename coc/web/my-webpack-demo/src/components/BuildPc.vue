@@ -14,7 +14,7 @@
         </el-steps>
       </div>
     </el-col>
-    <el-col :xs="18" :sm="18" style="height: 575px">
+    <el-col :xs="18" :sm="18">
       <transition name="slide-fade" appear v-on:after-leave="stepMove">
         <el-card v-if="partOfDice" id="card-dice" class="box-card">
           <div v-if="diceAction">
@@ -39,22 +39,135 @@
               </template>
             </el-table-column>
           </el-table>
-          <div style="padding-top: 10px">
-            <el-button round type="success" :disabled="diceNextDisabled" @click="partOfDice=!partOfDice">下一步</el-button>
-          </div>
+          <transition name="fade">
+            <div style="padding-top: 10px" v-if="!diceNextDisabled">
+              <el-button round type="success" @click="partOfDice=!partOfDice">下一步</el-button>
+            </div>
+          </transition>
         </el-card>
       </transition>
 
       <transition name="slide-fade" v-on:after-leave="stepMove">
-        <el-card v-if="partOfAge">
+        <el-card v-if="partOfAge" class="box-card">
           <div class="block">
             <h1>选择年龄</h1>
-            <el-slider :min="16" :max="99" v-model="age" @change="sliderHandleAge"></el-slider>
-            <div>
-              <p>确定{{ age }}岁吗</p>
-              <p>{{ ageText }}</p>
-            </div>
-            <el-button type="primary" plain>请谨慎决定喔</el-button>
+            <h2 v-if="ageConfirm">{{ age }}岁</h2>
+            <el-slider :min="16" :max="99" v-model="age" :disabled="ageConfirm"></el-slider>
+            <transition name="fade">
+              <div v-if="!ageConfirm">
+                <div>
+                  <p>确定{{ age }}岁吗</p>
+                  <p>{{ ageText }}</p>
+                </div>
+                <el-button type="primary" plain @click="ageConfirm=!ageConfirm" >请谨慎决定喔</el-button>
+              </div>
+            </transition>
+            <transition name="fade">
+              <div v-if="ageConfirm">
+                <div v-if="age < 20">
+                  <h2>属性调整</h2>
+                  <div>
+                    <hr/>
+                    <p>
+                      <strong>力量</strong>和<strong>体型</strong>合计需要减去<strong>5</strong>点
+                    </p>
+                    <div>
+                      <el-slider v-model="age20Punish" :min="0" :max="5" :format-tooltip="formatTooltipAge20"></el-slider>
+                      <p>当前力量为{{ property[0].sum }}，调整后为{{ property[0].sum - age20Punish }}</p>
+                      <p>当前体型为{{ property[1].sum }}，调整后为{{ property[1].sum - (5 - age20Punish) }}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <hr>
+                    <p>
+                      <strong>教育</strong>需要减去<strong>5</strong>点，现在是<strong>{{ property[7].sum - 5}}</strong>点
+                    </p>
+                  </div>
+                  <div>
+                    <hr>
+                    <p>
+                      重掷<strong>幸运</strong>
+                    </p>
+                    <div v-if="age20ReRoll">
+                      <div v-if="age20ReRollAction">
+                        <img class="img-dice" src="../assets/dice/dice_action.gif" />
+                        <img class="img-dice" src="../assets/dice/dice_action.gif" />
+                        <img class="img-dice" src="../assets/dice/dice_action.gif" />
+                      </div>
+                      <div v-else>
+                        <img v-for="dice of age20ReRollResult" class="img-dice" :src="dice" :key="dice.id"/>
+                      </div>
+                    </div>
+                    <el-button v-if="!Boolean(age20ReRollResultText)" type="primary" plain @click="btnHandleAge20ReRoll">{{ age20ReRollText }}</el-button>
+                    <p v-if="Boolean(age20ReRollResultText)">{{ age20ReRollResultText }}</p>
+                  </div>
+                </div>
+                <div v-else>
+                  <h2>属性调整</h2>
+                  <div v-if="Boolean(agePunish)">
+                    <hr/>
+                    <p>力量，体质，敏捷合计要减<strong>{{ agePunish }}</strong>点</p>
+                    <div style="margin: 0 10px">
+                      <div>
+                        <div style="display: inline-block; width: 100%;">
+                          <p style="float: left; font-size: 22px; margin: 4px"><strong>STR</strong></p>
+                        </div>
+                        <el-slider v-model="ageTmpSTR" :min="0" :max="agePunish"></el-slider>
+                        <p style="margin: 4px">当前力量为{{ property[0].sum }}，调整后为{{ property[0].sum - ageTmpSTR }}</p>
+                      </div>
+                      <hr class="dashed" />
+                      <div>
+                        <div style="display: inline-block; width: 100%;">
+                          <p style="float: left; font-size: 22px; margin: 4px"><strong>CON</strong></p>
+                        </div>
+                        <el-slider v-model="ageTmpCON" :min="0" :max="agePunish"></el-slider>
+                        <p style="margin: 4px">当前体质为{{ property[1].sum }}，调整后为{{ property[1].sum - ageTmpCON }}</p>
+                      </div>
+                      <hr class="dashed" />
+                      <div>
+                        <div style="display: inline-block; width: 100%;">
+                          <p style="float: left; font-size: 22px; margin: 4px"><strong>DEX</strong></p>
+                        </div>
+                        <el-slider v-model="ageTmpDEX" :min="0" :max="agePunish"></el-slider>
+                        <p style="margin: 4px">当前敏捷为{{ property[3].sum }}，调整后为{{ property[3].sum - ageTmpDEX }}</p>
+                      </div>
+                    </div>
+                    <div style="margin-top: 4px; font-size: 18px">{{ agePunishHelpText }}</div>
+                  </div>
+                  <div v-if="Boolean(agePunishApp)">
+                    <hr/>
+                    <div>
+                      <p>
+                        <strong>外貌</strong>需要减去<strong>{{ agePunishApp }}</strong>点，现在是<strong>{{ property[4].sum - agePunishApp }}</strong>点
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <hr/>
+                    <div>
+                      <p style="margin-bottom: 4px">还可以进行<strong>{{ ageEDUTimes }}</strong>次教育增强鉴定</p>
+                      <div style="width: 100%; height: 32px">
+                        <el-button style="float: right; margin-right: 8px" size="small" type="info" round icon="el-icon-info" @click="btnAgeEDUNotice">关于教育增强鉴定</el-button>
+                      </div>
+                      <div style="font-size: 36px">DICE：{{ animateDice100Result }}</div>
+                      <transition name="fade" mode="out-in">
+                        <div v-if="Boolean(ageEDUTimes)" style="text-align: center">
+                          <el-button type="primary" plain @click="btnHandleAgeEDU">{{ btnHandleAgeEDUText }}</el-button>
+                        </div>
+                        <div v-else>
+                          <p style="font-size: 18px">最终，你的教育停留在<strong>{{ property[7].sum }}</strong>点</p>
+                        </div>
+                      </transition>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </transition>
+            <transition name="fade">
+              <div style="padding-top: 10px" v-if="ageFinish">
+                <el-button round type="success" @click="btnHandleAgeNext">下一步</el-button>
+              </div>
+            </transition>
           </div>
         </el-card>
       </transition>
@@ -74,6 +187,8 @@
 <script>
 import ElContainer from 'element-ui/packages/container/src/main'
 import ElCard from 'element-ui/packages/card/src/main'
+
+import TWEEN from 'tween.js'
 
 export default {
   components: {
@@ -101,7 +216,25 @@ export default {
 
       partOfAge: false,
       age: 32,
-      ageDetail: require('../assets/data/age_data'),
+      ageDetailData: require('../assets/data/age_data'),
+      ageConfirm: false,
+      ageAdjust: false,
+      age20Punish: 0,
+      age20ReRoll: false,
+      age20ReRollAction: true,
+      age20ReRollText: 'Re-roll',
+      age20ReRollResult: [],
+      age20ReRollResultText: 0,
+      // 20岁以上的
+      agePunish: 0,
+      agePunishApp: 0,
+      ageEDUTimes: 1,
+      dice100Result: 0,
+      animateDice100Result: 0,
+      btnHandleAgeEDUText: '看一下岁月是否有使你进步',
+      ageTmpSTR: 0,
+      ageTmpCON: 0,
+      ageTmpDEX: 0,
 
       partOfJob: false,
 
@@ -182,8 +315,72 @@ export default {
       }
     },
 
-    sliderHandleAge (value) {
-      this.age = value
+    formatTooltipAge20 (value) {
+      return '力量减去' + value + '点，体质减去' + (5 - value) + '点'
+    },
+
+    initAgePunish (punish, app, eduTimes) {
+      this.agePunish = punish
+      this.agePunishApp = app
+      this.ageEDUTimes = eduTimes
+    },
+
+    btnHandleAge20ReRoll () {
+      if (this.age20ReRoll) {
+        this.age20ReRollAction = false
+        let sum = 0
+        for (let j = 0; j < 3; j++) {
+          let res = Math.floor(Math.random() * 6) + 1
+          this.age20ReRollResult.push(require('../assets/dice/dice_' + res + '.png'))
+          sum += res * 5
+        }
+        if (this.property[8].sum < sum) {
+          this.property[8].sum = sum
+          this.age20ReRollResultText = '看来幸运女神对你再次露出了微笑，现在你的幸运为' + this.property[8].sum
+        } else {
+          this.age20ReRollResultText = '看来幸运女神并不在这里，现在你的幸运还是' + this.property[8].sum
+        }
+      } else {
+        this.age20ReRoll = true
+        this.age20ReRollText = 'Stop'
+      }
+    },
+
+    btnAgeEDUNotice () {
+      const h = this.$createElement
+      this.$notify.info({
+        title: '教育增强鉴定',
+        position: 'top-left',
+        message: h('i', { style: 'color: teal; font-size: 16px' }, '教育增强鉴定是指掷100面骰子，若结果比当前教育点数高，则可以增加1D10的点数')
+      })
+    },
+
+    btnHandleAgeEDU () {
+      this.dice100Result = Math.floor(Math.random() * 100)
+      this.btnHandleAgeEDUText = '再' + this.btnHandleAgeEDUText
+
+      let msg
+      if (this.dice100Result > this.property[7].sum) {
+        let point = Math.ceil(Math.random() * 10)
+        this.property[7].sum += point
+        msg = '看来岁月的流逝让你获得了不少知识，你的EDU提高了' + point + '点，现在是' + this.property[7].sum + '点了'
+      } else {
+        msg = '看来你并没有从岁月的流逝中获得什么知识，你的EDU还停留在' + this.property[7].sum
+      }
+
+      const h = this.$createElement
+      this.$notify.info({
+        title: '教育增强鉴定结果',
+        position: 'top-left',
+        message: h('i', { style: 'color: teal; font-size: 16px' }, msg)
+      })
+
+      this.ageEDUTimes--
+      console.log(this.dice100Result)
+    },
+
+    btnHandleAgeNext () {
+
     }
 
   },
@@ -199,22 +396,71 @@ export default {
     },
 
     ageText () {
-      if (this.age < 19) {
-        return this.ageDetail['19']
-      } else if (this.age < 39) {
-        return this.ageDetail['39']
-      } else if (this.age < 49) {
-        return this.ageDetail['49']
-      } else if (this.age < 59) {
-        return this.ageDetail['59']
-      } else if (this.age < 69) {
-        return this.ageDetail['69']
-      } else if (this.age < 79) {
-        return this.ageDetail['79']
+      if (this.age < 20) {
+        return this.ageDetailData['19']
+      } else if (this.age < 40) {
+        return this.ageDetailData['39']
+      } else if (this.age < 50) {
+        this.initAgePunish(5, 5, 2)
+        return this.ageDetailData['49']
+      } else if (this.age < 60) {
+        this.initAgePunish(10, 10, 3)
+        return this.ageDetailData['59']
+      } else if (this.age < 70) {
+        this.initAgePunish(20, 15, 4)
+        return this.ageDetailData['69']
+      } else if (this.age < 80) {
+        this.initAgePunish(40, 20, 4)
+        return this.ageDetailData['79']
       } else {
-        return this.ageDetail['89']
+        this.initAgePunish(80, 25, 4)
+        return this.ageDetailData['89']
       }
+    },
+
+    agePunishHelpText () {
+      let tmpSum = this.ageTmpSTR + this.ageTmpCON + this.ageTmpDEX
+      if (tmpSum < this.agePunish) {
+        return '还要减去 ' + (this.agePunish - tmpSum) + ' 点属性点才够呢'
+      } else if (tmpSum > this.agePunish) {
+        return '别减太多，会死的'
+      } else {
+        return '调整完成'
+      }
+    },
+
+    ageFinish () {
+      if (this.ageEDUTimes === 0) {
+        if (this.age < 20 && Boolean(this.age20ReRollResultText)) {
+          return true
+        } else if (this.agePunish === this.ageTmpDEX + this.ageTmpSTR + this.ageTmpCON) {
+          return true
+        }
+      }
+      return false
     }
+  },
+
+  watch: {
+    dice100Result: function (newValue, oldValue) {
+      let vm = this
+      function animate () {
+        if (TWEEN.update()) {
+          requestAnimationFrame(animate)
+        }
+      }
+
+      new TWEEN.Tween({ tweeningNumber: oldValue })
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .to({ tweeningNumber: newValue }, 500)
+        .onUpdate(function () {
+          vm.animateDice100Result = this.tweeningNumber.toFixed(0)
+        })
+        .start()
+
+      animate()
+    }
+
   }
 
 }
@@ -223,11 +469,30 @@ export default {
 <style>
   .box-card {
     width: 100%;
+    /*height: 575px;*/
+  }
+
+  .el-card__body {
+    padding: 10px;
   }
 
   .img-dice {
-    width: 80px;
-    height: 80px;
+    width: 90px;
+    height: 90px;
+  }
+
+  hr {
+    margin-top: 5px;
+    border: 0;
+    height: 2px;
+    background-image: -webkit-linear-gradient(left, #f0f0f0, #666666, #f0f0f0);
+    background-image: -moz-linear-gradient(left, #f0f0f0, #666666, #f0f0f0);
+  }
+
+  .dashed {
+    border: 0;
+    border-bottom: 1px dashed #ccc;
+    background: #959595;
   }
 
   .slide-fade-enter-active {
@@ -242,4 +507,10 @@ export default {
     opacity: 0;
   }
 
+  .fade-enter-active, .fade-leave-active {
+    transition: opacity .5s;
+  }
+  .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+    opacity: 0;
+  }
 </style>
