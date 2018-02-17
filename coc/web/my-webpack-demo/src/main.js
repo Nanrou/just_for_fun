@@ -10,6 +10,11 @@ import 'element-ui/lib/theme-chalk/index.css'
 Vue.config.productionTip = false
 Vue.use(ElementUI)
 
+router.beforeEach((to, from, next) => {
+  document.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no;'
+  next()
+})
+
 /* eslint-disable no-new */
 new Vue({
   el: '#app',

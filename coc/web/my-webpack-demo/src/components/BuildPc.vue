@@ -3,11 +3,13 @@
 <el-row :gutter="10">
   <el-col :xs="6" :sm="6">
     <div style="height: 575px; padding-left: 15px">
+      <!--
       <el-button @click="btnFakeDice">dice</el-button>
       <el-button @click="partOfAge = !partOfAge">age</el-button>
       <el-button @click="partOfJob = !partOfJob">job</el-button>
       <el-button @click="partOfSkill = !partOfSkill">skill</el-button>
       <el-button @click="partOfISkill = !partOfISkill">iSkill</el-button>
+      -->
       <el-steps direction="vertical" :active="stepActive" finish-status="success">
         <el-step title="属性"></el-step>
         <el-step title="年龄"></el-step>
@@ -425,6 +427,7 @@ import ElContainer from 'element-ui/packages/container/src/main'
 import ElCard from 'element-ui/packages/card/src/main'
 
 import TWEEN from 'tween.js'
+import axios from 'axios'
 
 export default {
   components: {
@@ -833,6 +836,16 @@ export default {
       }
 
       console.log(finalData)
+      axios.post('/api/create', finalData)
+        .then(
+          response => {
+            console.log('success', response)
+          })
+        .catch(
+          error => {
+            console.log(error)
+          }
+        )
     }
   },
 

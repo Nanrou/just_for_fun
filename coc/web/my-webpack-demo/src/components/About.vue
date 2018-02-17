@@ -7,9 +7,11 @@
         <el-button type="primary" @click="rollDice">ROLL</el-button>
       </div>
     </transition>
+    <!--
     <div style="margin-top: 30px">
       <img src="../assets/lulu.png"/>
     </div>
+    -->
   </div>
 </template>
 
