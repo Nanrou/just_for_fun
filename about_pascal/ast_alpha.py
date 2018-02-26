@@ -518,7 +518,7 @@ class Interpreter(NodeVisitor):  # 这里才是真正操作执行
 
     def __init__(self, parser):
         self.parser = parser
-        self.GLOBAL_SCOPE = {}
+        self.GLOBAL_SCOPE = OrderedDict()
 
     # 基础逻辑部分
     def visit_num(self, node):
