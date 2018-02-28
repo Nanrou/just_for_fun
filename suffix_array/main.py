@@ -15,9 +15,11 @@ def build_suffix_array_by_hash(strings):
 
         rank1 = [compound_rank_dict[r] for r in rank2]
         step_length *= 2
+
     sa = [0 for _ in range(len(rank1))]
     for index in range(len(rank1)):
         sa[rank1[index]] = index
+
     return sa, rank1
 
 
@@ -64,8 +66,8 @@ def radix_sort(lst, base=10):
 
 
 def build_suffix_array_by_doubling(strings):
-    m = 255
-    r = strings
+    m = 128
+    r = strings + '$'
     length = len(r)
     sa = [0 for _ in range(length)]
     wa = [0 for _ in range(m)]
@@ -83,14 +85,16 @@ def build_suffix_array_by_doubling(strings):
     for i in range(length):
         x[i] = ord(r[i])
         ws[x[i]] += 1
-    for i in range(1, m):
+    for i in range(1, m):  # 最后那个数会是总名次，也就是总排名
         ws[i] += ws[i - 1]
     for i in range(length - 1, -1, -1):
-        ws[x[i]] -= 1
+        ws[x[i]] -= 1  # 拿0来讲，sa[0]就会是末尾的下标n
         sa[ws[x[i]]] = i
+    print(x)
 
     j = p = 1
     while p < length:
+        p = 0
         for i in range(length - j, length):
             y[p] = i
             p += 1
@@ -103,14 +107,16 @@ def build_suffix_array_by_doubling(strings):
         for i in range(m):
             ws[i] = 0
         for i in range(length):
-            ws[ws[i]] += 1
+            ws[wv[i]] += 1
         for i in range(1, m):
             ws[i] += ws[i - 1]
         for i in range(length - 1, -1, -1):
             ws[wv[i]] -= 1
             sa[ws[wv[i]]] = y[i]
+
         x, y = y, x
         x[sa[0]] = 0
+        p = 1
         for i in range(1, length):
             if cmp(y, sa[i - 1], sa[i], j):
                 x[sa[i]] = p - 1
@@ -120,10 +126,109 @@ def build_suffix_array_by_doubling(strings):
         j <<= 1
         m = p
 
+    print(x)
+
+
+def ttt():
+    def cmp(r, a, b, l):
+        return r[a] == r[b] and r[a + l] == r[b + l]
+
+    m = 128
+    r = 'aabaaaab' + '$'
+    length = len(r)
+    sa = [0 for _ in range(length)]
+    wa = [0 for _ in range(m)]
+    wb = [0 for _ in range(m)]
+    wv = [0 for _ in range(m)]
+    ws = [0 for _ in range(m)]
+    x, y = wa, wb
+
+    for i in range(m):
+        ws[i] = 0
+
+    print('ws初始化桶: ', ws)
+    print('-' * 20)
+    for i in range(length):
+        x[i] = ord(r[i])
+        ws[x[i]] += 1
+
+    print('ws字符串入桶: ', ws)
+    print('-' * 20)
+    for i in range(1, m):  # ???
+        ws[i] += ws[i - 1]
+
+    print('ws与前一项相加: ', ws)
+    print('-' * 20)
+    for i in range(length - 1, -1, -1):
+        print('x: ', x)
+        print('sa[--ws[x[{i}]]] = {i}'.format(i=i))
+        print('sa[--ws[{x}]] = {i}'.format(x=x[i], i=i))
+        print('sa[--{w}] = {i}'.format(w=ws[x[i]], i=i))
+        ws[x[i]] -= 1
+        print('ws[i]自减后更新为: ', ws)
+        sa[ws[x[i]]] = i
+        print('sa[{w}] = {i}'.format(w=ws[x[i]], i=i))
+        print(sa)
+        print('-' * 20, '\n')
+
+    print('after first x: ', x)
+    j = p = 1
+    while p < length:
+        p = 0  # y[]里存放的是按第二关键字排序的子串首字符下标
+        for i in range(length - j, length):
+            y[p] = i
+            p += 1
+        for i in range(length):
+            if sa[i] >= j:
+                y[p] = sa[i] - j
+                p += 1
+        print('y: ', y)
+
+        for i in range(length):
+            wv[i] = x[y[i]]
+        print('wv: ', wv)
+
+        for i in range(m):
+            ws[i] = 0
+        print('ws初始化: ', ws)
+
+        for i in range(length):
+            ws[wv[i]] += 1
+        print('ws插入项: ', ws)
+
+        for i in range(1, m):
+            ws[i] += ws[i - 1]
+        print('ws加前一项:', ws)
+
+        for i in range(length - 1, -1, -1):
+            ws[wv[i]] -= 1
+            sa[ws[wv[i]]] = y[i]
+        print('sa: ', sa)
+
+        x, y = y, x
+        x[sa[0]] = 0
+        p = 1
+        for i in range(1, length):
+            if cmp(y, sa[i - 1], sa[i], j):  # 去比较两个字符串是否相同
+                x[sa[i]] = p - 1
+            else:
+                x[sa[i]] = p
+                p += 1  # p 最终为不同字符串的个数，符合直觉，也就是所有后缀的总数
+        print('x: ', x)
+        print('-' * 20, j, p)
+        j <<= 1
+        m = p
+
+
+def rank2sa(rank):
+    sa = [0 for _ in range(len(rank))]
+    for i in range(len(rank)):
+        sa[rank[i]] = i
     print(sa)
 
 
 if __name__ == '__main__':
+    # text_string = '11212'
     text_string = 'aabaaaab'
     # text_string = 'heheda'
     # text_string = 'heheheda'
@@ -132,3 +237,6 @@ if __name__ == '__main__':
     # print(sa, rank)
     # build_lcp(sa, rank, text_string)
     build_suffix_array_by_doubling(text_string)
+    # ttt()
+    # rank2sa([1, 1, 2, 1, 1, 1, 1, 2])
+    # rank2sa([8, 0, 1, 3, 4, 5, 6, 2, 7])
