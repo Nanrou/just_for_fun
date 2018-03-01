@@ -37,7 +37,26 @@ def build_lcp(sa, rank, strings):
                 k += 1
         ht[rank[i]] = k
     ht[0] = '-'
+    print('build_lcp: ', ht)
     return ht
+
+
+def cal_height(r, sa):  # 这里假设sa是包括最小标识符的，也就是sa[0] == 0
+    n = len(r)
+    rank = [0 for _ in range(128)]
+    height = [0 for _ in range(128)]
+    k = 0
+    for i in range(1, n):
+        rank[sa[i]] = i
+    for i in range(n - 1):  # 在初始化的时候，就将rank末位赋0了
+        if k:
+            k -= 1
+        j = sa[rank[i] - 1]
+        while r[i + k] == r[j + k]:
+            k += 1
+        height[rank[i]] = k
+    print('cal_height: ', height)
+    return height
 
 
 def radix_sort(lst, base=10):
@@ -90,7 +109,6 @@ def build_suffix_array_by_doubling(strings):
     for i in range(length - 1, -1, -1):
         ws[x[i]] -= 1  # 拿0来讲，sa[0]就会是末尾的下标n
         sa[ws[x[i]]] = i
-    print(x)
 
     j = p = 1
     while p < length:
@@ -127,6 +145,7 @@ def build_suffix_array_by_doubling(strings):
         m = p
 
     print(x)
+    return sa
 
 
 def ttt():
@@ -220,11 +239,13 @@ def ttt():
         m = p
 
 
-def rank2sa(rank):
+def reciprocal_transform(rank):
     sa = [0 for _ in range(len(rank))]
     for i in range(len(rank)):
         sa[rank[i]] = i
-    print(sa)
+    print('before: ', rank)
+    print('after: ', sa)
+    return sa
 
 
 if __name__ == '__main__':
@@ -236,7 +257,10 @@ if __name__ == '__main__':
     # sa, rank = build_suffix_array_by_hash(text_string)
     # print(sa, rank)
     # build_lcp(sa, rank, text_string)
-    build_suffix_array_by_doubling(text_string)
+    # build_suffix_array_by_doubling(text_string)
     # ttt()
     # rank2sa([1, 1, 2, 1, 1, 1, 1, 2])
     # rank2sa([8, 0, 1, 3, 4, 5, 6, 2, 7])
+    rank = [4, 6, 8, 1, 2, 3, 5, 7, 0]
+    cal_height('aabaaaab$', reciprocal_transform(rank))
+    build_lcp(reciprocal_transform(rank), rank, 'aabaaaab$')
