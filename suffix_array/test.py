@@ -1,3 +1,5 @@
+from string import printable
+from random import randint
 import unittest
 from suffix_array import SuffixArray
 
@@ -15,6 +17,12 @@ class TestSuffixArray(unittest.TestCase):
 
         self.assertEqual(self.sa2.sa, [11, 10, 7, 0, 3, 5, 8, 1, 4, 6, 9, 2])
         self.assertEqual(self.sa2.height, [0, 1, 4, 1, 1, 0, 3, 0, 0, 0, 2])
+
+        random_strings = ''.join([printable[randint(0, len(printable) - 1)] for _ in range(2000)])
+        rd_sa = SuffixArray(random_strings)
+        for _ in range(10):
+            i = randint(1, len(rd_sa.sa) - 1)
+            self.assertTrue(random_strings[rd_sa.sa[i]:] > random_strings[rd_sa.sa[i - 1]:])
 
     def test_lcp_of_two_suffix(self):
         self.assertEqual(self.sa1.lcp_of_two_suffix(1, 4), 'a')
