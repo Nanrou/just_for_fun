@@ -36,6 +36,12 @@ class SuffixArray:
     def get_new_bucket(self):
         return [0 for _ in range(self.m)]
 
+    # def _build_sa_dc3(self):
+    #     def dc3(in_list):
+    #         b1_b2_list = []
+    #         for i, item in enumerate(in_list):
+    #
+    #
     def _build_sa(self):
 
         def cmp(rank, a, b, l):
