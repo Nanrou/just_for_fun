@@ -18,11 +18,24 @@ class TestSuffixArray(unittest.TestCase):
         self.assertEqual(self.sa2.sa, [11, 10, 7, 0, 3, 5, 8, 1, 4, 6, 9, 2])
         self.assertEqual(self.sa2.height, [0, 1, 4, 1, 1, 0, 3, 0, 0, 0, 2])
 
-        random_strings = ''.join([printable[randint(0, len(printable) - 1)] for _ in range(2000)])
-        rd_sa = SuffixArray(random_strings)
-        for _ in range(10):
+        print('\n', '-' * 20, '20000个随机字符', '-' * 20)
+        random_strings = ''.join([printable[randint(0, len(printable) - 1)] for _ in range(20000)])
+        rd_sa = SuffixArray(random_strings, debug=True)
+        rd_sa_dc3 = SuffixArray(random_strings, dc3=True, debug=True)
+        for _ in range(100):
             i = randint(1, len(rd_sa.sa) - 1)
+            self.assertEqual(rd_sa.sa[i], rd_sa_dc3.sa[i])
             self.assertTrue(random_strings[rd_sa.sa[i]:] > random_strings[rd_sa.sa[i - 1]:])
+
+        print('\n', '-' * 20, '测试文本（长度9390）', '-' * 20)
+        with open('test.txt', 'r', encoding='utf-8') as rf:
+            text = rf.read()
+            rd_sa = SuffixArray(text[:200], debug=True)
+            rd_sa_dc3 = SuffixArray(text[:200], dc3=True, debug=True)
+            for _ in range(100):
+                i = randint(1, len(rd_sa.sa) - 1)
+                self.assertEqual(rd_sa.sa[i], rd_sa_dc3.sa[i])
+                self.assertTrue(text[rd_sa.sa[i]:] > text[rd_sa.sa[i - 1]:])
 
     def test_lcp_of_two_suffix(self):
         self.assertEqual(self.sa1.lcp_of_two_suffix(1, 4), 'a')

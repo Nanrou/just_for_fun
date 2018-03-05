@@ -1,7 +1,22 @@
+from functools import wraps
+import time
+
+from dc3 import dc3 as dc3_build
+
+
+def time_clock(func, msg):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        s = time.time()
+        res = func(*args, **kwargs)
+        print('-' * 10, '{} 花了 {} 秒'.format(msg, time.time() - s), '-' * 10)
+        return res
+
+    return wrapper
 
 
 class SuffixArray:
-    def __init__(self, r):
+    def __init__(self, r, dc3=False, debug=False):
         """
         接受 字符串 生成SA数组和Height数组
         :param r: 需要处理的字符串
@@ -9,21 +24,31 @@ class SuffixArray:
         # 怎么样找到足够大的m，和足够小的suffix呢
         self.r = r
         self.n = len(r)
-        self._rank1 = self._r2rank(r)
+        self._rank1 = self._r2rank()
         self.m = len(self._rank1)
         self._rank2 = [0 for _ in range(self.m)]
         self._sa = [0 for _ in range(self.m)]
         self._rank = [0 for _ in range(self.m)]
         self._height = [0 for _ in range(self.m)]
+        self.dc3 = dc3
 
-        self._build_sa()
+        if debug:
+            if dc3:
+                time_clock(self._build_sa_dc3, 'DC3')()
+            else:
+                time_clock(self._build_sa, 'Double')()
+        else:
+            if dc3:
+                self._build_sa_dc3()
+            else:
+                self._build_sa()
+
         self._build_height()
 
-    @staticmethod
-    def _r2rank(r):
+    def _r2rank(self):
         string_rank_mapper = {string: rank
-                              for rank, string in enumerate(sorted(set(r)), start=1)}
-        rank = [string_rank_mapper[string] for string in r]
+                              for rank, string in enumerate(sorted(set(self.r)), start=1)}
+        rank = [string_rank_mapper[string] for string in self.r]
         rank.append(0)
         return rank
 
@@ -36,12 +61,12 @@ class SuffixArray:
     def get_new_bucket(self):
         return [0 for _ in range(self.m)]
 
-    # def _build_sa_dc3(self):
-    #     def dc3(in_list):
-    #         b1_b2_list = []
-    #         for i, item in enumerate(in_list):
-    #
-    #
+    def _build_sa_dc3(self):
+        self._sa = [0] + dc3_build(self._rank1[:-1], self.m)[:self.n]
+        # self._sa = dc3_build(self._rank1)
+        for i in range(len(self._sa)):
+            self._rank[self._sa[i]] = i
+
     def _build_sa(self):
 
         def cmp(rank, a, b, l):
@@ -155,6 +180,7 @@ class SuffixArray:
         求出字符串中最长重复子串，不可重叠
         :return: 不重叠的最长重复子串
         """
+
         def check(k):
             for i in range(len(self.height)):
                 if self.height[i] < k:
@@ -229,13 +255,23 @@ class SuffixArray:
 if __name__ == '__main__':
     # test_string = 'ABRACADABRA!'
     test_string = 'aabaaaab'
-    sa = SuffixArray(test_string)
-    print('rank:', sa.rank)
-    print('sa: ', sa.sa)
-    print('height: ', sa.height)
+    with open('test.txt', 'r') as rf:
+        test_string = rf.read()
+    sa = SuffixArray(test_string, dc3=True, debug=True)
+    # print('rank:', sa.rank)
+    # print('sa_dc3: ', sa.sa)
+    # print('height: ', sa.height)
+    s1 = sa
+    sa = SuffixArray(test_string, debug=True)
+    # print('string to rank: ', s1._r2rank() == sa._r2rank())
+    print('rank:', s1.rank == sa.rank)
+    print('sa: ', s1.sa == sa.sa, len(s1.sa), len(sa.sa))
+    # print('sa: ', sa.sa)
+    print('height: ', s1.height == sa.height)
+
     # print('lcp of two suffix: ', sa.lcp_of_two_suffix(1, 4))
     # print('longest repeated sub string', sa.longest_repeated_sub_string())
     # print('unique longest repeated sub string', sa.unique_longest_repeated_sub_string())
     # print('k times repeated longest sub string', sa.k_times_repeated_longest_sub_string(2))
     # print('count different sub string', sa.count_different_sub_string())
-    sa.print_sa_sub_string()
+    # sa.print_sa_sub_string()
