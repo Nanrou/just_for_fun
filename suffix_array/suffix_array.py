@@ -1,10 +1,11 @@
+from bisect import bisect_left
 from functools import wraps
 import time
 
 from dc3 import dc3 as dc3_build
 
 
-def time_clock(func, msg):
+def time_clock(func, msg='test'):
     @wraps(func)
     def wrapper(*args, **kwargs):
         s = time.time()
@@ -16,7 +17,7 @@ def time_clock(func, msg):
 
 
 class SuffixArray:
-    def __init__(self, r, dc3=False, debug=False):
+    def __init__(self, r, dc3=False, debug=False, already_transformed=False):
         """
         接受 字符串 生成SA数组和Height数组
         :param r: 需要处理的字符串
@@ -24,7 +25,10 @@ class SuffixArray:
         # 怎么样找到足够大的m，和足够小的suffix呢
         self.r = r
         self.n = len(r)
-        self._rank1 = self._r2rank()
+        if already_transformed:  # 如果传入的直接就是数字数组的话
+            self._rank1 = r + [0]
+        else:
+            self._rank1 = self._str2rank()
         self.m = len(self._rank1)
         self._rank2 = [0 for _ in range(self.m)]
         self._sa = [0 for _ in range(self.m)]
@@ -45,7 +49,7 @@ class SuffixArray:
 
         self._build_height()
 
-    def _r2rank(self):
+    def _str2rank(self):
         string_rank_mapper = {string: rank
                               for rank, string in enumerate(sorted(set(self.r)), start=1)}
         rank = [string_rank_mapper[string] for string in self.r]
@@ -250,24 +254,83 @@ class SuffixArray:
         print('-' * 20)
         for i in self.sa:
             print(self.r[i:])
+            break
+
+
+class AnalyseCommonPart:
+    def __init__(self, texts, dc3=False):
+        assert isinstance(texts, list)
+        self.texts = texts
+        self._sa_ins = SuffixArray(self._str2rank(), already_transformed=True, dc3=dc3)
+        self._sa = self._sa_ins.sa[len(self.texts):]
+        self._height = self._sa_ins.height[len(self.texts):]
+
+        self.place_distribution = self._build_place_distribution()
+
+    def _str2rank(self):
+        string_rank_mapper = {string: rank
+                              for rank, string in enumerate(sorted(set(''.join(self.texts))), start=2)}
+        _rank = []
+        for item in [[string_rank_mapper[string] for string in text] for text in self.texts]:
+            _rank.append(1)
+            _rank.extend(item)
+        return _rank[1:]
+
+    def _build_place_distribution(self):
+        wv = [len(text) for text in self.texts]
+        for i in range(1, len(wv)):
+            wv[i] += wv[i - 1] + 1
+        return [i - 1 for i in wv]
+
+    def get_original_distribution(self, index):
+        return bisect_left(self.place_distribution, index)
+
+    def get_original_element(self, index, height=None):  # 这个索引是对应字符串合并后的
+        _distribution_index = self.get_original_distribution(index)
+        if _distribution_index != 0:
+            index -= self.place_distribution[_distribution_index - 1] + 2  # -= 优先级低，也就是先计算完等号右边
+        return self.texts[_distribution_index][index: index + height]
+
+    def print_sub_string(self):
+        for s in self._sa:
+            print('{:0>3}'.format(s), '|||', self.get_original_element(s))
+
+    def analyze(self):
+        res = dict()
+        # _tt = '$'.join(self.texts)
+        for i in range(len(self._height)):
+            if self._height[i] > 1:
+                # _strings = _tt[self._sa[i + 1]: self._sa[i + 1] + self._height[i]]
+                # if '$' in _strings:
+                #     _strings = _strings.split('$')[0]
+
+                _strings = self.get_original_element(self._sa[i + 1], self._height[i])
+
+                res.setdefault(_strings, []).extend([self.get_original_distribution(self._sa[i]),
+                                                     self.get_original_distribution(self._sa[i + 1])])
+                # print('sa_index: {:0>3} || sa: {:0>3} || height: {:0>2} || {}'.format(i, self._sa[i + 1], self._height[i], _tt[self._sa[i + 1]: self._sa[i + 1] + self._height[i]]))
+
+        for _strings, index_list in res.items():
+            for index, text in enumerate(self.texts):
+                if index not in index_list:
+                    if _strings in text:
+                        index_list.append(index)
+            index_list.sort()
+
+        return sorted([[_str, index_list] for _str, index_list in res.items()], key=lambda r: r[0])
 
 
 if __name__ == '__main__':
     # test_string = 'ABRACADABRA!'
-    test_string = 'aabaaaab'
+    # test_string = 'aabaaaab'
     with open('test.txt', 'r') as rf:
         test_string = rf.read()
-    sa = SuffixArray(test_string, dc3=True, debug=True)
-    # print('rank:', sa.rank)
-    # print('sa_dc3: ', sa.sa)
-    # print('height: ', sa.height)
-    s1 = sa
-    sa = SuffixArray(test_string, debug=True)
-    # print('string to rank: ', s1._r2rank() == sa._r2rank())
-    print('rank:', s1.rank == sa.rank)
-    print('sa: ', s1.sa == sa.sa, len(s1.sa), len(sa.sa))
-    # print('sa: ', sa.sa)
-    print('height: ', s1.height == sa.height)
+    # sa = SuffixArray(test_string, dc3=True, debug=True)
+    # s1 = sa
+    # sa = SuffixArray(test_string, debug=True)
+    # print('rank:', s1.rank == sa.rank)
+    # print('sa: ', s1.sa == sa.sa, len(s1.sa), len(sa.sa))
+    # print('height: ', s1.height == sa.height)
 
     # print('lcp of two suffix: ', sa.lcp_of_two_suffix(1, 4))
     # print('longest repeated sub string', sa.longest_repeated_sub_string())
@@ -275,3 +338,22 @@ if __name__ == '__main__':
     # print('k times repeated longest sub string', sa.k_times_repeated_longest_sub_string(2))
     # print('count different sub string', sa.count_different_sub_string())
     # sa.print_sa_sub_string()
+
+    tt = [
+        "小源科技获年度“最佳企业服务商”殊荣,",
+        "小源科技获年度“最佳企业服务商”殊荣, 短信公众号将成新流量风口",
+        "小源科技获年度“最佳企业服务商”殊荣, 短信公众号将成新流量风",
+        "小源科技获年度“最佳企业服务商”殊荣, 推短信公众号或将成为新",
+        "小源科技获年度“最佳企业服务商”殊荣, 短信公众号或将成为新风口",
+    ]
+
+    # aa = AnalyseCommonPart(tt)
+    for _ in range(5):
+        aa = AnalyseCommonPart(tt * 200)
+        time_clock(aa.analyze, 'double')()
+
+        aa = AnalyseCommonPart(tt * 200, dc3=True)
+        time_clock(aa.analyze, 'dc3')()
+
+        print('-' * 20)
+
