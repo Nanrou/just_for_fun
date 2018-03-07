@@ -267,6 +267,11 @@ class AnalyseCommonPart:
 
         self.place_distribution = self._build_place_distribution()
 
+        self._lcp_string = None
+        self._lcp_substring = None
+
+        self._cache = {}
+
     def _str2rank(self):
         string_rank_mapper = {string: rank
                               for rank, string in enumerate(sorted(set(''.join(self.texts))), start=2)}
@@ -317,14 +322,129 @@ class AnalyseCommonPart:
                         index_list.append(index)
             index_list.sort()
 
-        return sorted([[_str, index_list] for _str, index_list in res.items()], key=lambda r: r[0])
+            # self.lcp_string = sorted([[_str, index_list] for _str, index_list in res.items()], key=lambda r: r[0])
+            self._lcp_string = res
+        # res = list()
+        # for i in range(len(self._height)):
+        #     if self._height[i] > 1:
+        #         _strings = self.get_original_element(self._sa[i + 1], self._height[i])
+        #         _index_list = [self.get_original_distribution(self._sa[i]),
+        #                        self.get_original_distribution(self._sa[i + 1])]
+        #         res.append([_strings, _index_list])
+        #
+        # for _strings, _index_list in res:
+        #     self.get_new_index_of_string(_strings, _index_list)
+        # self.lcp_substring = sorted(res, key=lambda r: r[0])
+
+    @property
+    def lcp_string(self):
+        if 'lcp_string' not in self._cache:
+            self._cache['lcp_string'] = sorted(
+                [[_str, index_list] for _str, index_list in self._lcp_string.items() if len(_str) > 1],
+                key=lambda r: r[0])
+        return self._cache['lcp_string']
+
+    def get_new_index_of_string(self, s, i_l):
+        for _index, text in enumerate(self.texts):  # 更新 index_list
+            if _index not in i_l:
+                if s in text:
+                    i_l.insert(bisect_left(i_l, _index), _index)
+                    # TODO 可以去比较是逐次插入快，还是整体排序快
+                    # i_l.append(_index)
+        # i_l.sort()
+
+    def lcp_substring_detail_rude(self):
+        # res = []
+        res = dict()
+        sub_distribution = []
+
+        def handler_sub_distribution(sub_distribution_list):
+            for index in range(len(sub_distribution_list) - 1):
+                # res.append(sub_distribution_list[index])  # 其本身必定就是符合要求的
+                res.setdefault(sub_distribution_list[index][0], []).extend(list(sub_distribution_list[index][1]))
+                _index_list = list(sub_distribution_list[index][1])
+                # 处理两个lcp之间的那些字符串
+                for end_place in range(len(sub_distribution_list[index][0]) - 1,
+                                       len(sub_distribution_list[index + 1][0]),
+                                       -1):
+                    _string = sub_distribution_list[index][0][:end_place]
+                    self.get_new_index_of_string(_string, _index_list)
+                    # res.append([_string, list(_index_list)])  # 注意拷贝
+                    res.setdefault(_string, []).extend(list(_index_list))
+
+            # 手动处理分组中最短的那个
+            # res.append(sub_distribution_list[-1])
+            res.setdefault(sub_distribution_list[-1][0], []).extend(list(sub_distribution_list[-1][1]))
+            _index_list = list(sub_distribution_list[-1][1])
+            for end_place in range(len(sub_distribution_list[-1][0]) - 1, 1, -1):  # 字符串最短长度为2
+                _string = sub_distribution_list[-1][0][:end_place]
+                if len(_index_list) != len(self.texts):  # 小优化，一旦全包含了，后面就不需要处理了
+                    self.get_new_index_of_string(_string, _index_list)
+                # res.append([_string, list(_index_list)])  # 注意拷贝
+                res.setdefault(_string, []).extend(list(_index_list))
+
+            return []
+
+        # inverse_index = len(self.lcp_string) - 1
+        # tmp_height = [0] + self._height
+        # print('height: {}, height->1: {}'.format(len(self._height), len([i for i in self._height if i > 1])))
+        # print('len(lcp_string): {}'.format(inverse_index + 1))
+        # for height in tmp_height[::-1]:
+        #     # print(height)
+        #     # print(sub_distribution)
+        #     if height > 1:
+        #         sub_distribution.append(self.lcp_string[inverse_index])
+        #         inverse_index -= 1
+        #     elif sub_distribution:  # sub_distribution: [[strings_1, [0, 1]], ...]
+        #         start, end = 0, None
+        #         for i in range(1, len(sub_distribution)):
+        #             if sub_distribution[i][0] not in sub_distribution[i - 1][0]:
+        #                 end = i
+        #                 handler_sub_distribution(sub_distribution[start: end])
+        #                 start = i
+        #         sub_distribution = handler_sub_distribution(sub_distribution[start:])
+        #     # print(sub_distribution)
+        #     # print('*' * 30)
+
+        sub_distribution = list(self.lcp_string)
+        start, end = 0, None
+        for i in range(1, len(self.lcp_string)):
+            if sub_distribution[i][0] not in sub_distribution[i - 1][0]:
+                end = i
+                handler_sub_distribution(sub_distribution[start: end])
+                start = i
+        handler_sub_distribution(sub_distribution[start:])
+
+        # res = sorted(list(set(((item[0], tuple(item[1])) for item in res))), key=lambda i: i[0])  # 手动去重
+        self._lcp_substring = {k: sorted(set(v)) for k, v in res.items()}
+
+    def lcp_substring_detail_for_test(self):
+        res = []
+        for string, index_list in self.lcp_string:
+            tmp = []
+            for end_point in range(len(string), 1, -1):
+                ss = string[:end_point]
+                self.get_new_index_of_string(ss, index_list)
+                tmp.append([ss, index_list])
+            res.extend(tmp[::-1])
+
+        res = sorted(set([r[0] for r in res]))
+
+        return res
+
+    @property
+    def lcp_substring(self):
+        if 'lcp_substring' not in self._cache:
+            self._cache['lcp_substring'] = sorted(
+                [[_str, index_list] for _str, index_list in self._lcp_substring.items()], key=lambda r: r[0])
+        return self._cache['lcp_substring']
 
 
 if __name__ == '__main__':
     # test_string = 'ABRACADABRA!'
     # test_string = 'aabaaaab'
-    with open('test.txt', 'r') as rf:
-        test_string = rf.read()
+    # with open('test.txt', 'r') as rf:
+    #     test_string = rf.read()
     # sa = SuffixArray(test_string, dc3=True, debug=True)
     # s1 = sa
     # sa = SuffixArray(test_string, debug=True)
@@ -347,13 +467,38 @@ if __name__ == '__main__':
         "小源科技获年度“最佳企业服务商”殊荣, 短信公众号或将成为新风口",
     ]
 
-    # aa = AnalyseCommonPart(tt)
+    # aa = AnalyseCommonPart(tt * 3)
+    # aa.analyze()
+    # print(len(aa.lcp_string))
+    # for l in aa.lcp_string:
+    #     print(l)
+    # print('-' * 30)
+    # aa.lcp_substring_detail_rude()
+    # for a in aa.lcp_substring:
+    #     print(a)
+    # print(len(aa.lcp_substring))
+    # rr = aa.lcp_substring_detail_for_test()
+    # print(len(rr))
+
+    # dd = {r: 0 for r in rr}
+    #
+    # for s, _ in aa.lcp_substring:
+    #     try:
+    #         dd[s] += 1
+    #     except KeyError:
+    #         print('miss substring: ', s)
+    #
+    # for k, v in dd.items():
+    #     if v != 1:
+    #         print(k, v)
+
     for _ in range(5):
         aa = AnalyseCommonPart(tt * 200)
-        time_clock(aa.analyze, 'double')()
+        time_clock(aa.analyze, 'double 构造')()
+        time_clock(aa.lcp_substring_detail_rude, 'substring')()
 
         aa = AnalyseCommonPart(tt * 200, dc3=True)
-        time_clock(aa.analyze, 'dc3')()
+        time_clock(aa.analyze, 'dc3 构造')()
+        time_clock(aa.lcp_substring_detail_rude, 'substring')()
 
         print('-' * 20)
-
