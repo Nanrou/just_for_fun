@@ -622,7 +622,7 @@ if __name__ == '__main__':
         exec('v=[' + value + ']')
         ts[''.join(k)] = v
 
-    from suffix_array import AnalyseCommonPart
+    from suffix_array_demo import AnalyseCommonPart
 
     check_dict = {k: 0 for k in ts}
     aa = AnalyseCommonPart(template)

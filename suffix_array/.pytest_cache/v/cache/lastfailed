@@ -1,1 +1,3 @@
-{}
+{
+  "test.py::TestAnalyseCommonPart::test_substring_item": true
+}

@@ -1,7 +1,7 @@
 from string import printable
 from random import randint
 import unittest
-from suffix_array import SuffixArray, AnalyseCommonPart
+from suffix_array_demo import SuffixArray, AnalyseCommonPart
 
 
 class TestSuffixArray(unittest.TestCase):
@@ -80,6 +80,15 @@ class TestAnalyseCommonPart(unittest.TestCase):
 
     def test_analyze(self):
         self.assertEqual(self.sa_dc3.analyze(), self.sa_double.analyze())
+
+    def test_substring_quantity(self):
+        self.assertEqual(len(self.sa_dc3.lcp_substring), len(self.sa_double.lcp_substring_detail_for_test()))
+
+    def test_substring_every_item(self):
+        sa_dc3 = self.sa_dc3.lcp_substring
+        sa_test = self.sa_double.lcp_substring_detail_for_test()
+        for i in range(len(sa_dc3)):
+            self.assertEqual(sa_dc3[i][0], sa_test[i])
 
 
 if __name__ == '__main__':
